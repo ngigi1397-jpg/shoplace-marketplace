@@ -13,18 +13,55 @@ export default function SellerDashboardPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"overview" | "products" | "services">("overview");
+  const [services, setServices] = useState<any[]>([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { window.location.href = "/auth/login?redirect=/seller/dashboard"; return; }
       setUser(session.user);
-      // Load shop
-      const { data: shopData } = await supabase.from("shops").select("*").eq("owner_id", session.user.id).single();
+
+      // Check user role first — buyers should not access dashboard
+      const { data: userProfile } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+
+      if (userProfile?.role === "buyer") {
+        window.location.href = "/products";
+        return;
+      }
+
+      // Load shop for seller
+      const { data: shopList } = await supabase
+        .from("shops")
+        .select("*")
+        .eq("owner_id", session.user.id)
+        .order("created_at", { ascending: false });
+
+      const shopData = shopList && shopList.length > 0 ? shopList[0] : null;
+
+      // If seller has no shop yet, send to register
       if (!shopData) { window.location.href = "/seller/register"; return; }
+
       setShop(shopData);
+
       // Load products
-      const { data: productData } = await supabase.from("products").select("*").eq("shop_id", shopData.id).order("created_at", { ascending: false });
+      const { data: productData } = await supabase
+        .from("products")
+        .select("*")
+        .eq("shop_id", shopData.id)
+        .order("created_at", { ascending: false });
       setProducts(productData || []);
+
+      // Load services
+      const { data: serviceData } = await supabase
+        .from("services")
+        .select("*")
+        .eq("shop_id", shopData.id)
+        .order("created_at", { ascending: false });
+      setServices(serviceData || []);
+
       setLoading(false);
     });
   }, []);
@@ -53,9 +90,54 @@ export default function SellerDashboardPage() {
           {/* SIDEBAR */}
           <aside className="dash-sidebar">
             <div className="shop-identity">
-              <div className="shop-avatar">{shop?.shop_name?.[0] || "S"}</div>
+              {shop?.is_verified ? (
+                <div className="shop-avatar verified-av">
+                  <svg width="30" height="30" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <linearGradient id="avbg" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#FF8040"/>
+                        <stop offset="50%" stopColor="#FF5566"/>
+                        <stop offset="100%" stopColor="#FF2880"/>
+                      </linearGradient>
+                      <linearGradient id="avbag" x1="0%" y1="0%" x2="20%" y2="100%">
+                        <stop offset="0%" stopColor="#ffffff"/>
+                        <stop offset="100%" stopColor="#FFE8EC"/>
+                      </linearGradient>
+                      <linearGradient id="avpin" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#FF8040"/>
+                        <stop offset="100%" stopColor="#FF2880"/>
+                      </linearGradient>
+                    </defs>
+                    <rect width="220" height="220" rx="50" fill="url(#avbg)"/>
+                    <rect width="220" height="110" rx="50" fill="rgba(255,255,255,0.12)"/>
+                    <path d="M 76 100 C 76 72 82 56 86 50 C 90 44 96 42 102 42 C 108 42 114 44 118 50 C 122 56 128 72 128 100"
+                      fill="none" stroke="white" strokeWidth="10" strokeLinecap="round"/>
+                    <path d="M 80 100 C 80 74 85 59 89 53 C 92 47 97 45 102 45 C 107 45 112 47 115 53 C 119 59 124 74 124 100"
+                      fill="none" stroke="rgba(255,160,140,0.35)" strokeWidth="4" strokeLinecap="round"/>
+                    <path d="M 55 100 C 53 90 58 80 70 78 L 134 78 C 146 80 151 90 149 100 L 158 162 C 160 174 148 180 102 180 C 56 180 44 174 46 162 Z"
+                      fill="url(#avbag)"/>
+                    <circle cx="102" cy="118" r="18" fill="url(#avpin)"/>
+                    <circle cx="102" cy="118" r="8" fill="white"/>
+                    <circle cx="102" cy="118" r="3.5" fill="url(#avpin)"/>
+                    <path d="M 90 130 Q 102 154 114 130 Q 108 142 102 152 Q 96 142 90 130 Z" fill="url(#avpin)"/>
+                    <circle cx="97" cy="112" r="4" fill="rgba(255,255,255,0.65)"/>
+                  </svg>
+                </div>
+              ) : (
+                <div className="shop-avatar">{shop?.shop_name?.[0] || "S"}</div>
+              )}
               <div>
-                <div className="shop-name">{shop?.shop_name}</div>
+                <div className="shop-name-row">
+                  <div className="shop-name">{shop?.shop_name}</div>
+                </div>
+                {shop?.is_verified && (
+                  <div className="verified-ribbon">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none">
+                      <path d="M9 12.5L11 14.5L15.5 10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Verified Seller
+                  </div>
+                )}
                 <div className="shop-num">SHOP #{shop?.shop_number}</div>
               </div>
             </div>
@@ -68,7 +150,7 @@ export default function SellerDashboardPage() {
             <nav className="dash-nav">
               <div className={`dash-nav-item ${tab === "overview" ? "active" : ""}`} onClick={() => setTab("overview")}>⬛ Overview</div>
               <div className={`dash-nav-item ${tab === "products" ? "active" : ""}`} onClick={() => setTab("products")}>📦 Products ({products.length})</div>
-              <div className={`dash-nav-item ${tab === "services" ? "active" : ""}`} onClick={() => setTab("services")}>⚙️ Services</div>
+              <div className={`dash-nav-item ${tab === "services" ? "active" : ""}`} onClick={() => setTab("services")}>⚙️ Services ({services.length})</div>
             </nav>
           </aside>
 
@@ -208,6 +290,9 @@ a{text-decoration:none;color:inherit;}
 .dash-sidebar{background:white;border-right:1px solid var(--border);padding:2rem 1.5rem;position:sticky;top:68px;height:calc(100vh - 68px);overflow-y:auto;}
 .shop-identity{display:flex;align-items:center;gap:0.9rem;margin-bottom:1rem;}
 .shop-avatar{width:44px;height:44px;background:var(--rust);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:white;flex-shrink:0;}
+.verified-av{background:transparent!important;box-shadow:none;padding:0;width:44px;height:44px;}
+.shop-name-row{display:flex;align-items:center;gap:0.4rem;}
+.verified-ribbon{display:inline-flex;align-items:center;gap:0.28rem;padding:0.18rem 0.6rem;background:linear-gradient(135deg,#FF8040,#FF2880);border-radius:100px;font-size:0.62rem;font-weight:700;color:white;box-shadow:0 2px 8px rgba(255,80,60,0.4);margin:0.2rem 0 0.1rem;letter-spacing:0.02em;}
 .shop-name{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;}
 .shop-num{font-size:0.72rem;color:rgba(13,13,13,0.4);margin-top:0.1rem;}
 .shop-status{display:inline-flex;padding:0.25rem 0.75rem;border-radius:100px;font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:1rem;}

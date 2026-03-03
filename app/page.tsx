@@ -43,7 +43,7 @@ export default function HomePage() {
     <>
       <style>{css}</style>
 
-      {/* NAV */}
+      {/* ── NAV ── */}
       <nav className="sp-nav">
         <a href="/" className="sp-logo">Sho<span>place</span></a>
         <ul className="sp-nav-links">
@@ -62,13 +62,13 @@ export default function HomePage() {
           ) : (
             <>
               <a href="/auth/login" className="btn-ghost">Login</a>
-              <a href="/auth/signup" className="btn-solid">Get Started</a>
+              <a href="/get-started" className="btn-solid">Get Started</a>
             </>
           )}
         </div>
       </nav>
 
-      {/* HERO */}
+      {/* ── HERO ── */}
       <section className="sp-hero">
         <div className="hero-left">
           <div className="hero-badge">Kenya&apos;s Local Marketplace</div>
@@ -88,7 +88,7 @@ export default function HomePage() {
             <button onClick={() => window.location.assign(`/search?q=${searchQuery}`)}>Search</button>
           </div>
           <div className="hero-btns">
-            {!user && <a href="/auth/signup" className="btn-solid btn-lg">Join Free →</a>}
+            {!user && <a href="/get-started" className="btn-solid btn-lg">Join Free →</a>}
             <a href="/products" className="btn-ghost btn-lg">Browse Products</a>
           </div>
           <div className="hero-stats">
@@ -117,7 +117,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
+      {/* ── HOW IT WORKS ── */}
       <section className="sp-section white-section">
         <div className="sec-head center">
           <h2 className="sec-title">How Shoplace Works</h2>
@@ -125,10 +125,10 @@ export default function HomePage() {
         </div>
         <div className="how-grid">
           {[
-            { n: "01", icon: "👤", title: "Create Account", desc: "Sign up free. Choose your county and constituency to connect with local sellers.", link: "/auth/signup", label: "Sign up →" },
-            { n: "02", icon: "🔍", title: "Browse & Discover", desc: "Search products and services from verified shops near you. Filter by county or category.", link: "/products", label: "Browse →" },
-            { n: "03", icon: "🏪", title: "Open Your Shop", desc: "Sellers get a unique shop number. List products and services, reach buyers across Kenya.", link: "/seller/register", label: "Sell now →" },
-            { n: "04", icon: "🤝", title: "Connect & Trade", desc: "Contact sellers directly. Build trust through verified profiles and honest reviews.", link: "#", label: "Learn more →" },
+            { n:"01", icon:"👤", title:"Create Account", desc:"Sign up free. Choose your county and constituency to connect with local sellers.", link:"/get-started", label:"Sign up →" },
+            { n:"02", icon:"🔍", title:"Browse & Discover", desc:"Search products and services from verified shops near you. Filter by county or category.", link:"/products", label:"Browse →" },
+            { n:"03", icon:"🏪", title:"Open Your Shop", desc:"Sellers get a unique shop number. List products and services, reach buyers across Kenya.", link:"/seller/register", label:"Sell now →" },
+            { n:"04", icon:"🤝", title:"Connect & Trade", desc:"Contact sellers directly. Build trust through verified profiles and honest reviews.", link:"#", label:"Learn more →" },
           ].map(h => (
             <div className="how-card" key={h.n}>
               <div className="how-n">{h.n}</div>
@@ -141,7 +141,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CATEGORIES */}
+      {/* ── CATEGORIES ── */}
       <section className="sp-section">
         <div className="sec-head">
           <h2 className="sec-title">Browse Categories</h2>
@@ -149,12 +149,12 @@ export default function HomePage() {
         </div>
         <div className="cat-grid">
           {[
-            { icon: "📱", name: "Electronics", slug: "electronics" },
-            { icon: "👗", name: "Fashion", slug: "fashion" },
-            { icon: "🏠", name: "Home & Living", slug: "home" },
-            { icon: "🌾", name: "Agriculture", slug: "agriculture" },
-            { icon: "🔧", name: "Services", slug: "services" },
-            { icon: "🍎", name: "Food & Groceries", slug: "food" },
+            { icon:"📱", name:"Electronics", slug:"electronics" },
+            { icon:"👗", name:"Fashion", slug:"fashion" },
+            { icon:"🏠", name:"Home & Living", slug:"home" },
+            { icon:"🌾", name:"Agriculture", slug:"agriculture" },
+            { icon:"🔧", name:"Services", slug:"services" },
+            { icon:"🍎", name:"Food & Groceries", slug:"food" },
           ].map(c => (
             <div className="cat-card" key={c.name} onClick={() => goToCategory(c.slug)}>
               <div className="cat-ico">{c.icon}</div>
@@ -165,7 +165,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* LOGIN GATE — shown only when logged out */}
+      {/* ── LOGIN GATE (only if logged out) ── */}
       {!user && !loading && (
         <section className="gate-section">
           <div className="gate-card">
@@ -173,7 +173,7 @@ export default function HomePage() {
             <h2>Sign in to browse shops &amp; products</h2>
             <p>Create a free account to view sellers, browse all products, contact shops, and access every marketplace feature.</p>
             <div className="gate-btns">
-              <a href="/auth/signup" className="btn-solid btn-lg">Create Free Account</a>
+              <a href="/get-started" className="btn-solid btn-lg">Create Free Account</a>
               <a href="/auth/login" className="btn-ghost-white btn-lg">I already have an account</a>
             </div>
             <div className="gate-perks">
@@ -186,18 +186,18 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* SELLER BANNER */}
+      {/* ── SELLER BANNER ── */}
       <div className="sell-banner">
         <div>
           <h2>Ready to start selling?</h2>
           <p>Get your unique shop number, list your products and services, and reach buyers across Kenya. Free to start.</p>
         </div>
-        <a href={user ? "/seller/register" : "/auth/signup?next=seller"} className="btn-white">
+        <a href={user ? "/seller/register" : "/get-started"} className="btn-white">
           Open Your Shop Today →
         </a>
       </div>
 
-      {/* FOOTER */}
+      {/* ── FOOTER ── */}
       <footer>
         <div className="foot-grid">
           <div className="foot-brand">
@@ -216,7 +216,7 @@ export default function HomePage() {
           <div className="foot-col">
             <h4>Sellers</h4>
             <ul>
-              <li><a href={user ? "/seller/register" : "/auth/signup?next=seller"}>Open a Shop</a></li>
+              <li><a href={user ? "/seller/register" : "/get-started"}>Open a Shop</a></li>
               <li><a href="/seller/guide">Seller Guide</a></li>
               <li><a href={user ? "/seller/dashboard" : "/auth/login"}>Seller Dashboard</a></li>
             </ul>
@@ -246,6 +246,8 @@ const css = `
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden;}
 a{text-decoration:none;}
+
+/* NAV */
 .sp-nav{position:fixed;top:0;width:100%;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1.1rem 4rem;background:rgba(245,240,232,0.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(13,13,13,0.08);}
 .sp-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;letter-spacing:-0.04em;color:var(--ink);}
 .sp-logo span{color:var(--rust);}
@@ -267,6 +269,8 @@ a{text-decoration:none;}
 .btn-white:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.2);}
 .btn-ghost-white{padding:.75rem 1.7rem;border:1.5px solid rgba(255,255,255,.25);border-radius:100px;font-size:.93rem;font-weight:500;color:white;background:transparent;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;}
 .btn-ghost-white:hover{background:rgba(255,255,255,.1);}
+
+/* HERO */
 .sp-hero{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;padding-top:76px;overflow:hidden;}
 .hero-left{display:flex;flex-direction:column;justify-content:center;padding:5rem 4rem 4rem;}
 .hero-badge{display:inline-flex;align-items:center;gap:.5rem;padding:.35rem 1rem;background:var(--mist);border:1px solid rgba(61,107,79,.2);border-radius:100px;font-size:.76rem;font-weight:500;color:var(--sage);width:fit-content;margin-bottom:1.8rem;}
@@ -290,6 +294,8 @@ a{text-decoration:none;}
 .h-card-icon{font-size:1.6rem;flex-shrink:0;}
 .h-card-title{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;margin-bottom:.25rem;}
 .h-card-sub{font-size:.75rem;opacity:.45;line-height:1.5;}
+
+/* SECTIONS */
 .sp-section{padding:5.5rem 4rem;}
 .white-section{background:white;}
 .sec-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2.5rem;}
@@ -297,6 +303,8 @@ a{text-decoration:none;}
 .sec-title{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;letter-spacing:-.03em;}
 .sec-sub{font-size:.9rem;color:rgba(13,13,13,.48);margin-top:.4rem;}
 .sec-link{font-size:.88rem;color:var(--rust);font-weight:500;}
+
+/* HOW IT WORKS */
 .how-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.3rem;}
 .how-card{padding:1.8rem 1.4rem;border:1.5px solid rgba(13,13,13,.08);border-radius:18px;transition:all .25s;}
 .how-card:hover{border-color:var(--rust);transform:translateY(-3px);box-shadow:0 10px 28px rgba(200,75,49,.08);}
@@ -305,12 +313,16 @@ a{text-decoration:none;}
 .how-title{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:.5rem;}
 .how-desc{font-size:.8rem;color:rgba(13,13,13,.52);line-height:1.6;margin-bottom:.9rem;}
 .how-lnk{font-size:.8rem;color:var(--rust);font-weight:600;}
+
+/* CATEGORIES */
 .cat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:.9rem;}
 .cat-card{background:white;border-radius:14px;padding:1.6rem .9rem;text-align:center;cursor:pointer;border:1.5px solid transparent;transition:all .25s;}
 .cat-card:hover{border-color:var(--rust);transform:translateY(-3px);box-shadow:0 8px 22px rgba(200,75,49,.1);}
 .cat-ico{font-size:2rem;margin-bottom:.7rem;}
 .cat-name{font-size:.8rem;font-weight:500;}
 .cat-lock{font-size:.66rem;color:rgba(13,13,13,.3);margin-top:.35rem;}
+
+/* LOGIN GATE */
 .gate-section{padding:1rem 4rem 5.5rem;}
 .gate-card{background:var(--ink);color:white;border-radius:22px;padding:3.5rem 3rem;text-align:center;max-width:660px;margin:0 auto;}
 .gate-ico{font-size:2.8rem;margin-bottom:1.2rem;}
@@ -319,9 +331,13 @@ a{text-decoration:none;}
 .gate-btns{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.8rem;}
 .gate-perks{display:flex;gap:1.2rem;justify-content:center;flex-wrap:wrap;}
 .gate-perks span{font-size:.78rem;color:rgba(255,255,255,.35);}
+
+/* SELL BANNER */
 .sell-banner{background:linear-gradient(135deg,var(--rust),#a83a22);border-radius:22px;padding:2.8rem 3.5rem;display:flex;align-items:center;justify-content:space-between;margin:0 4rem 5.5rem;gap:2rem;}
 .sell-banner h2{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:white;letter-spacing:-.03em;}
 .sell-banner p{font-size:.9rem;color:rgba(255,255,255,.65);margin-top:.45rem;max-width:400px;line-height:1.6;}
+
+/* FOOTER */
 footer{background:var(--ink);color:white;padding:4rem;}
 .foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3.5rem;margin-bottom:2.5rem;}
 .foot-brand p{font-size:.83rem;color:rgba(255,255,255,.38);line-height:1.7;max-width:250px;margin-top:.9rem;}
