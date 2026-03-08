@@ -1,18 +1,20 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
   title: "Shoplace — Kenya's Local Marketplace",
-  description: "Discover products and services from verified sellers across all 47 counties in Kenya.",
+  description: "Buy and sell products and services across all 47 counties in Kenya.",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body style={{ margin: 0, padding: 0 }}>{children}</body>
     </html>
   );
 }

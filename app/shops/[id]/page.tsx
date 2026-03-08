@@ -118,7 +118,17 @@ export default function ShopPage() {
               <div className="shop-avatar-lg">{shop?.shop_name?.[0] || "S"}</div>
               <div className="shop-hero-info">
                 <div className="shop-hero-num">SHOP #{String(shop?.shop_number || "").padStart(5, "0")}</div>
-                <h1 className="shop-hero-name">{shop?.shop_name}</h1>
+                <div className="shop-hero-title-row">
+                  <h1 className="shop-hero-name">{shop?.shop_name}</h1>
+                  {shop?.is_verified === true && (
+                    <div className="hero-verified-badge">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 12.5L11 14.5L15.5 10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      Verified Seller
+                    </div>
+                  )}
+                </div>
                 <div className="shop-hero-meta">
                   <span>📍 {shop?.county}{shop?.constituency ? `, ${shop?.constituency}` : ""}</span>
                   <span>·</span>
@@ -379,4 +389,28 @@ a{text-decoration:none;color:inherit;}
 .nf-icon{font-size:3rem;margin-bottom:1rem;}
 .not-found h2{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;margin-bottom:0.6rem;}
 .not-found p{font-size:0.88rem;color:rgba(13,13,13,0.45);margin-bottom:1.5rem;}
+
+.shop-hero-title-row{display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;}
+.hero-verified-badge{display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.8rem;background:linear-gradient(135deg,#FF8040,#FF2880);border-radius:100px;font-size:0.72rem;font-weight:700;color:white;box-shadow:0 2px 10px rgba(255,80,60,0.4);}
+@media(max-width:768px){
+  .sp-nav{padding:0.9rem 1.2rem;}
+  .sp-nav-links{display:none;}
+  .sp-nav-actions .btn-ghost:first-child{display:none;}
+  .shop-hero{padding:5rem 1.2rem 1.5rem;}
+  .shop-hero-inner{flex-direction:column;gap:1.2rem;}
+  .shop-hero-left{flex-direction:column;align-items:flex-start;}
+  .shop-avatar-lg{width:60px;height:60px;font-size:1.5rem;}
+  .shop-hero-name{font-size:1.4rem;}
+  .shop-contact-card{width:100%;}
+  .shop-content{padding:1.5rem 1.2rem;}
+  .tabs-bar{gap:0.5rem;}
+  .tab-btn{padding:0.5rem 0.9rem;font-size:0.8rem;}
+  .products-grid{grid-template-columns:repeat(2,1fr);gap:0.8rem;}
+  .services-grid{grid-template-columns:1fr;}
+}
+@media(max-width:480px){
+  .products-grid{grid-template-columns:repeat(2,1fr);gap:0.6rem;}
+  .product-img{height:130px;}
+  .shop-hero{padding:5rem 1rem 1.2rem;}
+}
 `;

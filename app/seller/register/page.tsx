@@ -210,8 +210,8 @@ export default function SellerRegisterPage() {
               </div>
 
               <div className="fg">
-                <label>Instagram Handle</label>
-                <input type="text" placeholder="@yourshop" value={form.instagram} onChange={e => update("instagram", e.target.value)} />
+                <label>Instagram Handle <span style={{fontWeight:400,color:"rgba(13,13,13,0.35)",textTransform:"none",fontSize:"0.7rem"}}>(optional)</span></label>
+                <input type="text" placeholder="@yourshop — leave blank if you don't have one" value={form.instagram} onChange={e => update("instagram", e.target.value)} />
               </div>
 
               {error && <div className="form-error">⚠️ {error}</div>}

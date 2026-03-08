@@ -1,41 +1,30 @@
 "use client";
-
 import { useState, useEffect } from "react";
-import { createClient, User } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
-// Initialize Supabase client with environment variables
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// Type for user role from the 'users' table
-type UserRole = "buyer" | "seller" | "admin" | null;
-
 export default function HomePage() {
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<UserRole>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [user, setUser] = useState<any>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        const { data: prof } = await supabase
-          .from("users")
-          .select("role")
-          .eq("id", session.user.id)
-          .single<{ role: UserRole }>();
+        const { data: prof } = await supabase.from("users").select("role").eq("id", session.user.id).single();
         setRole(prof?.role ?? null);
       }
       setLoading(false);
     });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
@@ -44,7 +33,7 @@ export default function HomePage() {
     setUser(null);
   };
 
-  const goToShops = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const goToShops = (e: React.MouseEvent) => {
     e.preventDefault();
     window.location.href = user ? "/shops" : "/auth/login?redirect=/shops";
   };
@@ -55,187 +44,73 @@ export default function HomePage() {
       : `/auth/login?redirect=/products?category=${slug}`;
   };
 
-  // Data for UI sections
-  const categories = [
-    { icon: "📱", name: "Electronics", slug: "electronics" },
-    { icon: "👗", name: "Fashion", slug: "fashion" },
-    { icon: "🏠", name: "Home & Living", slug: "home" },
-    { icon: "🌾", name: "Agriculture", slug: "agriculture" },
-    { icon: "🔧", name: "Services", slug: "services" },
-    { icon: "🍎", name: "Food & Groceries", slug: "food" },
-  ];
-
-  const howCards = [
-    {
-      n: "01",
-      icon: "👤",
-      title: "Create Account",
-      desc: "Sign up free. Choose your county and constituency to connect with local sellers.",
-      link: "/get-started",
-      label: "Sign up →",
-    },
-    {
-      n: "02",
-      icon: "🔍",
-      title: "Browse & Discover",
-      desc: "Search products and services from verified shops near you. Filter by county or category.",
-      link: "/products",
-      label: "Browse →",
-    },
-    {
-      n: "03",
-      icon: "🏪",
-      title: "Open Your Shop",
-      desc: "Sellers get a unique shop number. List products and services, reach buyers across Kenya.",
-      link: "/seller/register",
-      label: "Sell now →",
-    },
-    {
-      n: "04",
-      icon: "🤝",
-      title: "Connect & Trade",
-      desc: "Contact sellers directly. Build trust through verified profiles and honest reviews.",
-      link: "#",
-      label: "Learn more →",
-    },
-  ];
-
-  const heroCards = [
-    {
-      icon: "🛍️",
-      title: "Buy from local sellers",
-      sub: "Browse thousands of products from verified shops across Kenya",
-    },
-    {
-      icon: "🏪",
-      title: "Open your own shop",
-      sub: "Get a unique shop number and start selling to buyers in your county",
-    },
-    {
-      icon: "⚙️",
-      title: "Offer your services",
-      sub: "List plumbing, design, delivery and any skill — reach local clients",
-    },
-  ];
-
   return (
     <>
       <style>{css}</style>
 
-      {/* NAV */}
+      {/* ── NAV ── */}
       <nav className="sp-nav">
-        <a href="/" className="sp-logo">
-          Sho<span>place</span>
-        </a>
+        <a href="/" className="sp-logo">Sho<span>place</span></a>
         <ul className="sp-nav-links">
-          <li>
-            <a href="/products">Browse</a>
-          </li>
-          <li>
-            <a href="/services">Services</a>
-          </li>
-          <li>
-            <a href="#" onClick={goToShops}>
-              Shops
-            </a>
-          </li>
-          <li>
-            <a href="/counties">Counties</a>
-          </li>
+          <li><a href="/products">Browse</a></li>
+          <li><a href="/services">Services</a></li>
+          <li><a href="#" onClick={goToShops}>Shops</a></li>
+          <li><a href="/counties">Counties</a></li>
         </ul>
         <div className="sp-nav-actions">
-          {loading ? (
-            <div className="nav-skeleton" />
-          ) : user ? (
+          {loading ? <div className="nav-skeleton" /> : user ? (
             <>
               <span className="nav-hi">Hi, {user.email?.split("@")[0]} 👋</span>
-              <a
-                href={role === "buyer" ? "/buyer/saved" : "/seller/dashboard"}
-                className="btn-ghost"
-              >
-                {role === "buyer" ? "My Saved" : "My Shop"}
-              </a>
-              <button className="btn-rust-outline" onClick={handleSignOut}>
-                Sign Out
-              </button>
+              <a href={role === "buyer" ? "/buyer/saved" : "/seller/dashboard"} className="btn-ghost">{role === "buyer" ? "My Saved" : "My Shop"}</a>
+              <button className="btn-rust-outline" onClick={handleSignOut}>Sign Out</button>
             </>
           ) : (
             <>
-              <a href="/auth/login" className="btn-ghost">
-                Login
-              </a>
-              <a href="/get-started" className="btn-solid">
-                Get Started
-              </a>
+              <a href="/auth/login" className="btn-ghost">Login</a>
+              <a href="/get-started" className="btn-solid">Get Started</a>
             </>
           )}
         </div>
       </nav>
 
-      {/* HERO */}
+      {/* ── HERO ── */}
       <section className="sp-hero">
         <div className="hero-left">
           <div className="hero-badge">Kenya&apos;s Local Marketplace</div>
-          <h1>
-            Shop <em>local.</em>
-            <br />
-            Sell anywhere.
-          </h1>
+          <h1>Shop <em>local.</em><br />Sell anywhere.</h1>
           <p className="hero-sub">
-            Discover products and services from verified sellers across all 47 counties. Sign in
-            to browse shops, contact sellers, and start trading.
+            Discover products and services from verified sellers across all 47 counties.
+            Sign in to browse shops, contact sellers, and start trading.
           </p>
           <div className="hero-search">
             <input
               type="text"
               placeholder="Search products, shops, services..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === "Enter" && window.location.assign(`/search?q=${searchQuery}`)
-              }
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && window.location.assign(`/search?q=${searchQuery}`)}
             />
-            <button onClick={() => window.location.assign(`/search?q=${searchQuery}`)}>
-              Search
-            </button>
+            <button onClick={() => window.location.assign(`/search?q=${searchQuery}`)}>Search</button>
           </div>
           <div className="hero-btns">
-            {!user && (
-              <a href="/get-started" className="btn-solid btn-lg">
-                Join Free →
-              </a>
-            )}
-            <a href="/products" className="btn-ghost btn-lg">
-              Browse Products
-            </a>
+            {!user && <a href="/get-started" className="btn-solid btn-lg">Join Free →</a>}
+            <a href="/products" className="btn-ghost btn-lg">Browse Products</a>
           </div>
           <div className="hero-stats">
-            <div className="stat-item">
-              <h3>47</h3>
-              <p>Counties</p>
-            </div>
-            <div className="stat-item">
-              <h3>Free</h3>
-              <p>To Join</p>
-            </div>
-            <div className="stat-item">
-              <h3>🔒</h3>
-              <p>Verified Sellers</p>
-            </div>
+            <div className="stat-item"><h3>47</h3><p>Counties</p></div>
+            <div className="stat-item"><h3>Free</h3><p>To Join</p></div>
+            <div className="stat-item"><h3>🔒</h3><p>Verified Sellers</p></div>
           </div>
         </div>
 
         <div className="hero-right">
           <div className="hero-cards">
-            {heroCards.map((c, i) => (
-              <div
-                className="h-card"
-                key={i}
-                style={{
-                  animationDelay: `${-i * 2}s`,
-                  marginLeft: i === 1 ? "1.5rem" : i === 2 ? "0.75rem" : "0",
-                }}
-              >
+            {[
+              { icon: "🛍️", title: "Buy from local sellers", sub: "Browse thousands of products from verified shops across Kenya" },
+              { icon: "🏪", title: "Open your own shop", sub: "Get a unique shop number and start selling to buyers in your county" },
+              { icon: "⚙️", title: "Offer your services", sub: "List plumbing, design, delivery and any skill — reach local clients" },
+            ].map((c, i) => (
+              <div className="h-card" key={i} style={{ animationDelay: `${-i * 2}s`, marginLeft: i === 1 ? "1.5rem" : i === 2 ? "0.75rem" : "0" }}>
                 <span className="h-card-icon">{c.icon}</span>
                 <div>
                   <div className="h-card-title">{c.title}</div>
@@ -247,37 +122,45 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
+      {/* ── HOW IT WORKS ── */}
       <section className="sp-section white-section">
         <div className="sec-head center">
           <h2 className="sec-title">How Shoplace Works</h2>
           <p className="sec-sub">Simple steps to start buying or selling today</p>
         </div>
         <div className="how-grid">
-          {howCards.map((h) => (
+          {[
+            { n:"01", icon:"👤", title:"Create Account", desc:"Sign up free. Choose your county and constituency to connect with local sellers.", link:"/get-started", label:"Sign up →" },
+            { n:"02", icon:"🔍", title:"Browse & Discover", desc:"Search products and services from verified shops near you. Filter by county or category.", link:"/products", label:"Browse →" },
+            { n:"03", icon:"🏪", title:"Open Your Shop", desc:"Sellers get a unique shop number. List products and services, reach buyers across Kenya.", link:"/seller/register", label:"Sell now →" },
+            { n:"04", icon:"🤝", title:"Connect & Trade", desc:"Contact sellers directly. Build trust through verified profiles and honest reviews.", link:"#", label:"Learn more →" },
+          ].map(h => (
             <div className="how-card" key={h.n}>
               <div className="how-n">{h.n}</div>
               <div className="how-ico">{h.icon}</div>
               <div className="how-title">{h.title}</div>
               <div className="how-desc">{h.desc}</div>
-              <a href={h.link} className="how-lnk">
-                {h.label}
-              </a>
+              <a href={h.link} className="how-lnk">{h.label}</a>
             </div>
           ))}
         </div>
       </section>
 
-      {/* CATEGORIES */}
+      {/* ── CATEGORIES ── */}
       <section className="sp-section">
         <div className="sec-head">
           <h2 className="sec-title">Browse Categories</h2>
-          <a href="/products" className="sec-link">
-            View all →
-          </a>
+          <a href="/products" className="sec-link">View all →</a>
         </div>
         <div className="cat-grid">
-          {categories.map((c) => (
+          {[
+            { icon:"📱", name:"Electronics", slug:"electronics" },
+            { icon:"👗", name:"Fashion", slug:"fashion" },
+            { icon:"🏠", name:"Home & Living", slug:"home" },
+            { icon:"🌾", name:"Agriculture", slug:"agriculture" },
+            { icon:"🔧", name:"Services", slug:"services" },
+            { icon:"🍎", name:"Food & Groceries", slug:"food" },
+          ].map(c => (
             <div className="cat-card" key={c.name} onClick={() => goToCategory(c.slug)}>
               <div className="cat-ico">{c.icon}</div>
               <div className="cat-name">{c.name}</div>
@@ -287,23 +170,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* LOGIN GATE (only if logged out) */}
+      {/* ── LOGIN GATE (only if logged out) ── */}
       {!user && !loading && (
         <section className="gate-section">
           <div className="gate-card">
             <div className="gate-ico">🔒</div>
             <h2>Sign in to browse shops &amp; products</h2>
-            <p>
-              Create a free account to view sellers, browse all products, contact shops, and
-              access every marketplace feature.
-            </p>
+            <p>Create a free account to view sellers, browse all products, contact shops, and access every marketplace feature.</p>
             <div className="gate-btns">
-              <a href="/get-started" className="btn-solid btn-lg">
-                Create Free Account
-              </a>
-              <a href="/auth/login" className="btn-ghost-white btn-lg">
-                I already have an account
-              </a>
+              <a href="/get-started" className="btn-solid btn-lg">Create Free Account</a>
+              <a href="/auth/login" className="btn-ghost-white btn-lg">I already have an account</a>
             </div>
             <div className="gate-perks">
               <span>✓ Browse all products</span>
@@ -315,90 +191,48 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* SELLER BANNER */}
+      {/* ── SELLER BANNER ── */}
       <div className="sell-banner">
         <div>
           <h2>Ready to start selling?</h2>
-          <p>
-            Get your unique shop number, list your products and services, and reach buyers across
-            Kenya. Free to start.
-          </p>
+          <p>Get your unique shop number, list your products and services, and reach buyers across Kenya. Free to start.</p>
         </div>
         <a href={user ? "/seller/register" : "/get-started"} className="btn-white">
           Open Your Shop Today →
         </a>
       </div>
 
-      {/* FOOTER */}
+      {/* ── FOOTER ── */}
       <footer>
         <div className="foot-grid">
           <div className="foot-brand">
-            <a href="/" className="sp-logo">
-              Sho<span>place</span>
-            </a>
-            <p>
-              Kenya&apos;s trusted local marketplace connecting buyers, sellers, and service
-              providers across all 47 counties.
-            </p>
+            <a href="/" className="sp-logo">Sho<span>place</span></a>
+            <p>Kenya&apos;s trusted local marketplace connecting buyers, sellers, and service providers across all 47 counties.</p>
           </div>
           <div className="foot-col">
             <h4>Marketplace</h4>
             <ul>
-              <li>
-                <a href="/products">Browse Products</a>
-              </li>
-              <li>
-                <a href="/services">Browse Services</a>
-              </li>
-              <li>
-                <a href="#" onClick={goToShops}>
-                  Find Shops
-                </a>
-              </li>
-              <li>
-                <a href="/counties">By County</a>
-              </li>
+              <li><a href="/products">Browse Products</a></li>
+              <li><a href="/services">Browse Services</a></li>
+              <li><a href="#" onClick={goToShops}>Find Shops</a></li>
+              <li><a href="/counties">By County</a></li>
             </ul>
           </div>
           <div className="foot-col">
             <h4>Sellers</h4>
             <ul>
-              <li>
-                <a href={user ? "/seller/register" : "/get-started"}>Open a Shop</a>
-              </li>
-              <li>
-                <a href="/seller/guide">Seller Guide</a>
-              </li>
-              <li>
-                <a
-                  href={
-                    user
-                      ? role === "buyer"
-                        ? "/buyer/saved"
-                        : "/seller/dashboard"
-                      : "/auth/login"
-                  }
-                >
-                  {role === "buyer" ? "My Dashboard" : "Seller Dashboard"}
-                </a>
-              </li>
+              <li><a href={user ? "/seller/register" : "/get-started"}>Open a Shop</a></li>
+              <li><a href="/seller/guide">Seller Guide</a></li>
+              <li><a href={user ? (role === "buyer" ? "/buyer/saved" : "/seller/dashboard") : "/auth/login"}>{role === "buyer" ? "My Dashboard" : "Seller Dashboard"}</a></li>
             </ul>
           </div>
           <div className="foot-col">
             <h4>Support</h4>
             <ul>
-              <li>
-                <a href="/help">Help Center</a>
-              </li>
-              <li>
-                <a href="/contact">Contact Us</a>
-              </li>
-              <li>
-                <a href="/terms">Terms of Service</a>
-              </li>
-              <li>
-                <a href="/privacy">Privacy Policy</a>
-              </li>
+              <li><a href="/help">Help Center</a></li>
+              <li><a href="/contact">Contact Us</a></li>
+              <li><a href="/terms">Terms of Service</a></li>
+              <li><a href="/privacy">Privacy Policy</a></li>
             </ul>
           </div>
         </div>
@@ -411,7 +245,6 @@ export default function HomePage() {
   );
 }
 
-// Styles (same as original)
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 :root{--ink:#0d0d0d;--cream:#f5f0e8;--rust:#c84b31;--gold:#e8a020;--sage:#3d6b4f;--mist:#e8ede9;}
