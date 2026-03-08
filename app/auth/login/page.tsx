@@ -86,10 +86,8 @@ function LoginForm() {
                   onChange={e => setPassword(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && handleLogin()}
                 />
-                <div style={{ textAlign: "right", marginTop: "-0.5rem", marginBottom: "0.8rem" }}>
-                  <a href="/auth/forgot-password" style={{ fontSize: "0.78rem", color: "#c84b31", fontWeight: 500 }}>
-                    Forgot password?
-                  </a>
+                <div className="fg-footer">
+                  <a href="/auth/forgot-password" className="forgot-link">Forgot password?</a>
                 </div>
               </div>
 
