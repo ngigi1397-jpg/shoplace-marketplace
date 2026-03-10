@@ -9,7 +9,6 @@ const supabase = createClient(
 
 type Page = "dashboard" | "users" | "shops" | "products" | "services" | "verifications" | "reports";
 
-// ── Small helpers ─────────────────────────────
 function ShopNum({ num }: { num: string | number }) {
   const n = String(num).replace(/^#/, "").padStart(5, "0");
   return <span style={{ fontFamily:"monospace", fontSize:"0.78rem", color:"#4f7cff", background:"rgba(79,124,255,0.08)", padding:"0.2rem 0.5rem", borderRadius:"4px" }}>#{n}</span>;
@@ -52,38 +51,24 @@ function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
   return <div style={{ position:"fixed", bottom:"2rem", left:"50%", transform:"translateX(-50%)", background:"#1a3326", color:"white", padding:"0.65rem 1.5rem", borderRadius:"100px", fontSize:"0.84rem", fontWeight:600, zIndex:9999, border:"1px solid rgba(52,199,123,0.3)", whiteSpace:"nowrap" }}>{msg}</div>;
 }
 
-// ── Main ──────────────────────────────────────
 export default function AdminDashboard() {
-  const [isLoggedIn, setIsLoggedIn]   = useState(false);
-  const [email, setEmail]             = useState("");
-  const [password, setPassword]       = useState("");
-  const [loginError, setLoginError]   = useState("");
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [page, setPage]               = useState<Page>("dashboard");
-  const [toast, setToast]             = useState("");
+  const [page, setPage] = useState<Page>("dashboard");
+  const [toast, setToast] = useState("");
 
-  // data
-  const [stats, setStats]             = useState({ users:0, sellers:0, shops:0, products:0, services:0, pendingShops:0, pendingVerifications:0, reports:0 });
+  const [stats, setStats] = useState({ users:0, sellers:0, shops:0, products:0, services:0, pendingShops:0, pendingVerifications:0, reports:0 });
   const [statsLoading, setStatsLoading] = useState(true);
-  const [users, setUsers]             = useState<any[]>([]);
-  const [shops, setShops]             = useState<any[]>([]);
-  const [products, setProducts]       = useState<any[]>([]);
-  const [services, setServices]       = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [shops, setShops] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
   const [verifications, setVerifications] = useState<any[]>([]);
-  const [reports, setReports]         = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
-  const [search, setSearch]           = useState("");
-  const [verFilter, setVerFilter]     = useState<"pending"|"approved"|"rejected"|"all">("pending");
+  const [search, setSearch] = useState("");
+  const [verFilter, setVerFilter] = useState<"pending"|"approved"|"rejected"|"all">("pending");
 
   const showToast = (msg: string) => setToast(msg);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (error || !data.session) supabase.auth.signOut().catch(() => {});
-    });
-  }, []);
-
-  // ── Loaders ───────────────────────────────────
   const loadStats = async () => {
     setStatsLoading(true);
     try {
@@ -150,10 +135,9 @@ export default function AdminDashboard() {
     setDataLoading(false);
   };
 
-  useEffect(() => { if (isLoggedIn) loadStats(); }, [isLoggedIn]);
+  useEffect(() => { loadStats(); }, []);
 
   useEffect(() => {
-    if (!isLoggedIn) return;
     setSearch("");
     if (page==="users")         loadUsers();
     if (page==="shops")         loadShops();
@@ -161,30 +145,14 @@ export default function AdminDashboard() {
     if (page==="services")      loadServices();
     if (page==="verifications") loadVerifications();
     if (page==="reports")       loadReports();
-  }, [page, isLoggedIn]);
+  }, [page]);
 
-  // ── Actions ───────────────────────────────────
-  const handleLogin = async () => {
-    setLoginError("");
-    if (!email || !password) { setLoginError("Please enter email and password."); return; }
-    setLoginLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw new Error(error.message);
-      const { data: prof } = await supabase.from("users").select("role").eq("id", data.user.id).maybeSingle();
-      if (!prof || prof.role !== "admin") { await supabase.auth.signOut(); throw new Error("Access denied. Not an admin account."); }
-      setIsLoggedIn(true);
-    } catch (err: any) { setLoginError(err.message); }
-    finally { setLoginLoading(false); }
-  };
-
-  // Verify a seller — sets is_verified on the USER, auto-covers all their shops/products/services
   const verifySeller = async (userId: string, verReqId: string) => {
     await Promise.all([
       supabase.from("users").update({ is_verified:true, is_premium:true }).eq("id", userId),
       supabase.from("verification_requests").update({ status:"approved", reviewed_at: new Date().toISOString() }).eq("id", verReqId),
     ]);
-    showToast("✓ Seller verified! All their shops & listings are now verified.");
+    showToast("✓ Seller verified!");
     loadVerifications(); loadStats();
   };
 
@@ -195,29 +163,21 @@ export default function AdminDashboard() {
   };
 
   const revokeVerification = async (userId: string) => {
-    if (!confirm("Revoke this seller's verification? They will lose all premium features.")) return;
+    if (!confirm("Revoke this seller's verification?")) return;
     await supabase.from("users").update({ is_verified:false, is_premium:false }).eq("id", userId);
     showToast("Verification revoked.");
     loadUsers();
   };
 
-  const suspendUser = async (id: string) => {
-    await supabase.from("users").update({ is_suspended:true }).eq("id", id);
-    loadUsers(); showToast("User suspended.");
-  };
-  const restoreUser = async (id: string) => {
-    await supabase.from("users").update({ is_suspended:false }).eq("id", id);
-    loadUsers(); showToast("User restored.");
-  };
-
+  const suspendUser = async (id: string) => { await supabase.from("users").update({ is_suspended:true }).eq("id", id); loadUsers(); showToast("User suspended."); };
+  const restoreUser = async (id: string) => { await supabase.from("users").update({ is_suspended:false }).eq("id", id); loadUsers(); showToast("User restored."); };
   const approveShop = async (id: string) => { await supabase.from("shops").update({ approval_status:"approved" }).eq("id", id); loadShops(); loadStats(); showToast("Shop approved."); };
   const suspendShop = async (id: string) => { await supabase.from("shops").update({ approval_status:"suspended" }).eq("id", id); loadShops(); showToast("Shop suspended."); };
-
   const deleteProduct = async (id: string) => { if (!confirm("Delete product?")) return; await supabase.from("products").delete().eq("id", id); setProducts(p => p.filter(x => x.id !== id)); showToast("Product deleted."); };
   const deleteService = async (id: string) => { if (!confirm("Delete service?")) return; await supabase.from("services").delete().eq("id", id); setServices(s => s.filter(x => x.id !== id)); showToast("Service deleted."); };
 
   const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString("en-KE", { day:"numeric", month:"short", year:"numeric" }) : "—";
-  const filter  = (items: any[], fields: string[]) => {
+  const filter = (items: any[], fields: string[]) => {
     if (!search.trim()) return items;
     const q = search.toLowerCase();
     return items.filter(i => fields.some(f => String(i[f]||"").toLowerCase().includes(q)));
@@ -225,41 +185,6 @@ export default function AdminDashboard() {
 
   const verFiltered = verifications.filter(v => verFilter === "all" ? true : v.status === verFilter);
 
-  // ── LOGIN ─────────────────────────────────────
-  if (!isLoggedIn) return (
-    <>
-      <style>{css}</style>
-      <div className="login-screen">
-        <div className="login-grid">
-          <div className="login-left">
-            <div className="admin-logo">Shoplace <span className="tag">Admin</span></div>
-            <div>
-              <h2>Secure Admin<br/>Access Portal</h2>
-              <p>Restricted to authorized administrators only. All access is monitored.</p>
-            </div>
-            <div className="security-badges">
-              <div className="badge active">🔒 SSL Secured</div>
-              <div className="badge active">🛡️ Role Verified</div>
-              <div className="badge">📋 Audit Logged</div>
-            </div>
-          </div>
-          <div className="login-right">
-            <h3>Administrator Login</h3>
-            <p>Enter your credentials to continue.</p>
-            <div className="form-group"><label>Email</label><input type="email" placeholder="admin@shoplace.co.ke" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleLogin()}/></div>
-            <div className="form-group"><label>Password</label><input type="password" placeholder="••••••••••••" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleLogin()}/></div>
-            {loginError && <div className="login-error">⚠️ {loginError}</div>}
-            <button className="btn-login" onClick={handleLogin} disabled={loginLoading}>{loginLoading?"Verifying...":"Access Dashboard →"}</button>
-            <div className="login-warning">⚠️ Unauthorized access attempts are logged and reported.</div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-
-  const pendingVerCount = verifications.filter(v=>v.status==="pending").length;
-
-  // ── DASHBOARD ─────────────────────────────────
   return (
     <>
       <style>{css}</style>
@@ -296,12 +221,6 @@ export default function AdminDashboard() {
             <div className={`nav-item ${page==="reports"?"active":""}`} onClick={()=>setPage("reports")}><span>🚨</span> Reports {stats.reports>0&&<b className="nav-count">{stats.reports}</b>}</div>
           </div>
 
-          <div className="nav-section" style={{marginTop:"auto"}}>
-            <div className="nav-item danger" onClick={async()=>{await supabase.auth.signOut();setIsLoggedIn(false);}}>
-              <span>🚪</span> Logout
-            </div>
-          </div>
-
           <div className="sidebar-footer">
             <div className="admin-profile">
               <div className="admin-av">AD</div>
@@ -313,14 +232,13 @@ export default function AdminDashboard() {
         {/* MAIN */}
         <main className="main">
 
-          {/* ── DASHBOARD ── */}
+          {/* DASHBOARD */}
           {page === "dashboard" && (
             <div>
               <div className="page-header">
                 <div><div className="page-title">Dashboard</div><div className="page-sub">Live platform overview — Shoplace Kenya</div></div>
                 <button className="btn-sm" onClick={loadStats}>↻ Refresh</button>
               </div>
-
               <div className="stats-grid">
                 {[
                   { icon:"👤", val:stats.users,    label:"Total Users",    color:"#4f7cff" },
@@ -335,8 +253,6 @@ export default function AdminDashboard() {
                   </div>
                 ))}
               </div>
-
-              {/* Verification requests alert */}
               {stats.pendingVerifications > 0 && (
                 <div className="alert-card orange" onClick={()=>setPage("verifications")} style={{cursor:"pointer"}}>
                   <div className="alert-icon">✅</div>
@@ -346,7 +262,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               )}
-
               {stats.pendingShops > 0 && (
                 <div className="alert-card yellow" onClick={()=>setPage("shops")} style={{cursor:"pointer"}}>
                   <div className="alert-icon">🏬</div>
@@ -356,7 +271,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               )}
-
               {stats.reports > 0 && (
                 <div className="alert-card red" onClick={()=>setPage("reports")} style={{cursor:"pointer"}}>
                   <div className="alert-icon">🚨</div>
@@ -366,7 +280,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               )}
-
               {stats.pendingVerifications===0 && stats.pendingShops===0 && stats.reports===0 && !statsLoading && (
                 <div className="alert-card green">
                   <div className="alert-icon">✅</div>
@@ -379,7 +292,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* ── USERS ── */}
+          {/* USERS */}
           {page === "users" && (
             <div>
               <div className="page-header">
@@ -401,29 +314,22 @@ export default function AdminDashboard() {
                          <td style={{fontSize:"0.82rem"}}>{u.phone||"—"}</td>
                          <td><span className={`role-tag ${u.role||"buyer"}`}>{u.role||"buyer"}</span></td>
                          <td style={{fontSize:"0.82rem"}}>{u.county||"—"}</td>
-                         <td>
-                           {u.is_verified
-                             ? <span className="ver-badge">✓ Verified</span>
-                             : <span style={{fontSize:"0.72rem",color:"rgba(232,234,240,0.25)"}}>—</span>}
-                         </td>
+                         <td>{u.is_verified ? <span className="ver-badge">✓ Verified</span> : <span style={{fontSize:"0.72rem",color:"rgba(232,234,240,0.25)"}}>—</span>}</td>
                          <td style={{fontSize:"0.75rem",color:"rgba(232,234,240,0.35)"}}>{fmtDate(u.created_at)}</td>
                          <td><Pill status={u.is_suspended?"suspended":"active"}/></td>
                          <td>
                            {u.is_verified && <button className="action-btn warn" onClick={()=>revokeVerification(u.id)}>Revoke ✓</button>}
-                           {u.is_suspended
-                             ? <button className="action-btn success" onClick={()=>restoreUser(u.id)}>Restore</button>
-                             : <button className="action-btn danger" onClick={()=>suspendUser(u.id)}>Suspend</button>}
+                           {u.is_suspended ? <button className="action-btn success" onClick={()=>restoreUser(u.id)}>Restore</button> : <button className="action-btn danger" onClick={()=>suspendUser(u.id)}>Suspend</button>}
                          </td>
                        </tr>
                      ))}
                    </tbody>
-                 </table>
-                }
+                 </table>}
               </div>
             </div>
           )}
 
-          {/* ── SHOPS ── */}
+          {/* SHOPS */}
           {page === "shops" && (
             <div>
               <div className="page-header">
@@ -445,11 +351,7 @@ export default function AdminDashboard() {
                          <td><div style={{fontWeight:500}}>{s.shop_name}</div><div style={{fontSize:"0.72rem",color:"rgba(232,234,240,0.4)"}}>{s.category||"—"}</div></td>
                          <td style={{fontSize:"0.8rem",color:"rgba(232,234,240,0.5)"}}>{s.users?.full_name||s.users?.email||"—"}</td>
                          <td style={{fontSize:"0.82rem"}}>{s.county||"—"}</td>
-                         <td>
-                           {s.users?.is_verified
-                             ? <span className="ver-badge">✓ Verified</span>
-                             : <span style={{fontSize:"0.72rem",color:"rgba(232,234,240,0.25)"}}>Not verified</span>}
-                         </td>
+                         <td>{s.users?.is_verified ? <span className="ver-badge">✓ Verified</span> : <span style={{fontSize:"0.72rem",color:"rgba(232,234,240,0.25)"}}>Not verified</span>}</td>
                          <td><Pill status={s.approval_status||"pending"}/></td>
                          <td>
                            {s.approval_status==="pending" && <button className="action-btn success" onClick={()=>approveShop(s.id)}>Approve</button>}
@@ -459,13 +361,12 @@ export default function AdminDashboard() {
                        </tr>
                      ))}
                    </tbody>
-                 </table>
-                }
+                 </table>}
               </div>
             </div>
           )}
 
-          {/* ── VERIFICATIONS ── */}
+          {/* VERIFICATIONS */}
           {page === "verifications" && (
             <div>
               <div className="page-header">
@@ -475,13 +376,6 @@ export default function AdminDashboard() {
                 </div>
                 <button className="btn-sm" onClick={loadVerifications}>↻ Refresh</button>
               </div>
-
-              {/* Explainer */}
-              <div className="info-box">
-                <strong>How verification works:</strong> When you approve a seller here, their <code>users.is_verified</code> is set to <code>true</code>. This automatically gives the verified badge to ALL their shops, products and services — no individual shop verification needed.
-              </div>
-
-              {/* Filter tabs */}
               <div className="filter-tabs">
                 {(["pending","approved","rejected","all"] as const).map(f=>(
                   <button key={f} className={`filter-tab ${verFilter===f?"active":""}`} onClick={()=>setVerFilter(f)}>
@@ -492,7 +386,6 @@ export default function AdminDashboard() {
                   </button>
                 ))}
               </div>
-
               {dataLoading ? <Empty icon="⏳" title="Loading..." sub="Fetching verification requests"/> :
                verFiltered.length===0 ? <Empty icon="✅" title={`No ${verFilter==="all"?"":verFilter} requests`} sub="Nothing to show here."/> :
                <div className="ver-list">
@@ -510,48 +403,21 @@ export default function AdminDashboard() {
                          {v.users?.is_verified && <span className="ver-badge">✓ Currently Verified</span>}
                        </div>
                      </div>
-
                      <div className="ver-details">
-                       {[
-                         ["ID / Passport",  v.id_number],
-                         ["Business Name",  v.business_name],
-                         ["Business Type",  v.business_type],
-                         ["Phone",          v.phone],
-                         ["Reason",         v.reason],
-                       ].filter(([,val])=>val).map(([label,val])=>(
-                         <div key={label} className="ver-detail-row">
-                           <span className="ver-detail-label">{label}</span>
-                           <span className="ver-detail-val">{val}</span>
-                         </div>
+                       {[["ID / Passport",v.id_number],["Business Name",v.business_name],["Business Type",v.business_type],["Phone",v.phone],["Reason",v.reason]].filter(([,val])=>val).map(([label,val])=>(
+                         <div key={label} className="ver-detail-row"><span className="ver-detail-label">{label}</span><span className="ver-detail-val">{val}</span></div>
                        ))}
                      </div>
-
-                     {v.status === "pending" && (
-                       <div className="ver-actions">
-                         <button className="btn-verify" onClick={()=>verifySeller(v.user_id, v.id)}>✓ Approve & Verify Seller</button>
-                         <button className="btn-reject" onClick={()=>rejectVerification(v.id)}>✗ Reject</button>
-                       </div>
-                     )}
-                     {v.status === "approved" && (
-                       <div className="ver-actions">
-                         <span style={{fontSize:"0.78rem",color:"rgba(232,234,240,0.4)"}}>Approved on {fmtDate(v.reviewed_at)}</span>
-                         <button className="btn-reject" onClick={()=>revokeVerification(v.user_id)}>Revoke Verification</button>
-                       </div>
-                     )}
-                     {v.status === "rejected" && (
-                       <div className="ver-actions">
-                         <span style={{fontSize:"0.78rem",color:"rgba(232,234,240,0.4)"}}>Rejected on {fmtDate(v.reviewed_at)}</span>
-                         <button className="btn-verify" onClick={()=>verifySeller(v.user_id, v.id)}>Override — Verify Anyway</button>
-                       </div>
-                     )}
+                     {v.status==="pending" && <div className="ver-actions"><button className="btn-verify" onClick={()=>verifySeller(v.user_id,v.id)}>✓ Approve & Verify Seller</button><button className="btn-reject" onClick={()=>rejectVerification(v.id)}>✗ Reject</button></div>}
+                     {v.status==="approved" && <div className="ver-actions"><span style={{fontSize:"0.78rem",color:"rgba(232,234,240,0.4)"}}>Approved on {fmtDate(v.reviewed_at)}</span><button className="btn-reject" onClick={()=>revokeVerification(v.user_id)}>Revoke Verification</button></div>}
+                     {v.status==="rejected" && <div className="ver-actions"><span style={{fontSize:"0.78rem",color:"rgba(232,234,240,0.4)"}}>Rejected on {fmtDate(v.reviewed_at)}</span><button className="btn-verify" onClick={()=>verifySeller(v.user_id,v.id)}>Override — Verify Anyway</button></div>}
                    </div>
                  ))}
-               </div>
-              }
+               </div>}
             </div>
           )}
 
-          {/* ── PRODUCTS ── */}
+          {/* PRODUCTS */}
           {page === "products" && (
             <div>
               <div className="page-header">
@@ -570,15 +436,7 @@ export default function AdminDashboard() {
                    <tbody>
                      {filter(products,["name","category","county"]).map(p=>(
                        <tr key={p.id}>
-                         <td>
-                           <div className="product-cell">
-                             <div className="product-thumb"><ProductImage url={p.image_url} name={p.name}/></div>
-                             <div>
-                               <div className="product-name">{p.name}</div>
-                               <div className="product-meta">{p.condition==="new"?"✨ New":"♻️ Used"}</div>
-                             </div>
-                           </div>
-                         </td>
+                         <td><div className="product-cell"><div className="product-thumb"><ProductImage url={p.image_url} name={p.name}/></div><div><div className="product-name">{p.name}</div><div className="product-meta">{p.condition==="new"?"✨ New":"♻️ Used"}</div></div></div></td>
                          <td><div style={{fontSize:"0.82rem"}}>{p.shops?.shop_name||"—"}</div>{p.shops?.shop_number&&<ShopNum num={p.shops.shop_number}/>}</td>
                          <td><span className="cat-pill">{p.category||"—"}</span></td>
                          <td style={{fontFamily:"monospace",fontWeight:700,color:"#f5a623",fontSize:"0.88rem"}}>KSh {p.price?.toLocaleString()}</td>
@@ -589,13 +447,12 @@ export default function AdminDashboard() {
                        </tr>
                      ))}
                    </tbody>
-                 </table>
-                }
+                 </table>}
               </div>
             </div>
           )}
 
-          {/* ── SERVICES ── */}
+          {/* SERVICES */}
           {page === "services" && (
             <div>
               <div className="page-header">
@@ -614,12 +471,7 @@ export default function AdminDashboard() {
                    <tbody>
                      {filter(services,["name","category","county"]).map(s=>(
                        <tr key={s.id}>
-                         <td>
-                           <div className="product-cell">
-                             <div className="product-thumb" style={{background:"rgba(139,92,246,0.1)"}}><div className="product-thumb-fallback" style={{color:"#7c3aed"}}>⚙️</div></div>
-                             <div><div className="product-name">{s.name}</div><div className="product-meta">{s.price_type||"fixed"}</div></div>
-                           </div>
-                         </td>
+                         <td><div className="product-cell"><div className="product-thumb" style={{background:"rgba(139,92,246,0.1)"}}><div className="product-thumb-fallback" style={{color:"#7c3aed"}}>⚙️</div></div><div><div className="product-name">{s.name}</div><div className="product-meta">{s.price_type||"fixed"}</div></div></div></td>
                          <td><div style={{fontSize:"0.82rem"}}>{s.shops?.shop_name||"—"}</div>{s.shops?.shop_number&&<ShopNum num={s.shops.shop_number}/>}</td>
                          <td><span className="cat-pill">{s.category||"—"}</span></td>
                          <td style={{fontFamily:"monospace",fontWeight:700,color:"#f5a623",fontSize:"0.88rem"}}>{s.price_type==="free"?"Free":s.price_type==="negotiable"?"Negotiable":s.price?`KSh ${s.price.toLocaleString()}`:"—"}</td>
@@ -629,13 +481,12 @@ export default function AdminDashboard() {
                        </tr>
                      ))}
                    </tbody>
-                 </table>
-                }
+                 </table>}
               </div>
             </div>
           )}
 
-          {/* ── REPORTS ── */}
+          {/* REPORTS */}
           {page === "reports" && (
             <div>
               <div className="page-header">
@@ -661,8 +512,7 @@ export default function AdminDashboard() {
                        </tr>
                      ))}
                    </tbody>
-                 </table>
-                }
+                 </table>}
               </div>
             </div>
           )}
@@ -678,33 +528,6 @@ const css = `
 :root{--bg:#0a0b0d;--surface:#111317;--surface2:#181b20;--border:rgba(255,255,255,0.07);--text:#e8eaf0;--muted:rgba(232,234,240,0.4);--accent:#4f7cff;--danger:#ff4f4f;--success:#34c77b;--warn:#f5a623;--orange:#FF8040;}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-
-/* LOGIN */
-.login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);}
-.login-grid{display:grid;grid-template-columns:1fr 1fr;width:860px;min-height:520px;border-radius:24px;overflow:hidden;border:1px solid var(--border);}
-.login-left{background:linear-gradient(145deg,#0f1322,#1a0a2e);padding:3rem;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;}
-.login-left::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 40% 60%,rgba(79,124,255,0.15),transparent 50%);}
-.admin-logo{position:relative;z-index:1;font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:rgba(255,255,255,0.9);}
-.admin-logo .tag{display:inline-block;margin-left:0.5rem;font-size:0.6rem;font-weight:600;background:var(--accent);color:white;padding:0.18rem 0.45rem;border-radius:4px;text-transform:uppercase;letter-spacing:0.08em;}
-.login-left h2{position:relative;z-index:1;font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800;color:white;line-height:1.2;margin-bottom:1rem;}
-.login-left p{position:relative;z-index:1;font-size:0.85rem;color:rgba(255,255,255,0.38);line-height:1.6;}
-.security-badges{position:relative;z-index:1;display:flex;gap:0.5rem;flex-wrap:wrap;}
-.badge{font-size:0.7rem;font-weight:500;padding:0.28rem 0.65rem;border:1px solid rgba(255,255,255,0.1);border-radius:100px;color:rgba(255,255,255,0.45);}
-.badge.active{border-color:rgba(52,199,123,0.4);color:var(--success);}
-.login-right{background:var(--surface);padding:3rem;display:flex;flex-direction:column;justify-content:center;}
-.login-right h3{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;margin-bottom:0.3rem;}
-.login-right>p{font-size:0.85rem;color:var(--muted);margin-bottom:2rem;}
-.form-group{margin-bottom:1.1rem;}
-.form-group label{display:block;font-size:0.74rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.38rem;}
-.form-group input{width:100%;padding:0.78rem 0.95rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.88rem;color:var(--text);outline:none;transition:border-color 0.2s;}
-.form-group input:focus{border-color:var(--accent);}
-.login-error{background:rgba(255,79,79,0.08);border:1px solid rgba(255,79,79,0.2);border-radius:8px;padding:0.7rem 0.9rem;font-size:0.8rem;color:#ff6b6b;margin-bottom:1rem;}
-.btn-login{width:100%;padding:0.88rem;background:var(--accent);border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:600;color:white;cursor:pointer;transition:all 0.2s;}
-.btn-login:hover:not(:disabled){background:#3a6bff;}
-.btn-login:disabled{opacity:0.6;cursor:not-allowed;}
-.login-warning{margin-top:1.2rem;padding:0.7rem 0.9rem;background:rgba(255,79,79,0.06);border:1px solid rgba(255,79,79,0.12);border-radius:8px;font-size:0.73rem;color:rgba(255,100,100,0.7);}
-
-/* SIDEBAR */
 .sidebar{width:248px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.4rem 0;position:fixed;top:0;left:0;bottom:0;z-index:50;overflow-y:auto;}
 .sidebar-logo{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;padding:0 1.4rem 1.4rem;border-bottom:1px solid var(--border);margin-bottom:1.2rem;}
 .sidebar-logo .tag{display:inline-block;font-size:0.58rem;background:var(--accent);color:white;padding:0.12rem 0.38rem;border-radius:3px;margin-left:0.4rem;text-transform:uppercase;letter-spacing:0.06em;}
@@ -713,7 +536,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .nav-item{display:flex;align-items:center;gap:0.65rem;padding:0.62rem 0.85rem;border-radius:9px;font-size:0.84rem;color:var(--muted);cursor:pointer;transition:all 0.15s;margin-bottom:0.06rem;}
 .nav-item:hover{background:var(--surface2);color:var(--text);}
 .nav-item.active{background:rgba(79,124,255,0.12);color:var(--accent);}
-.nav-item.danger:hover{color:#ff6b6b;}
 .nav-count{margin-left:auto;color:white;font-size:0.62rem;font-weight:700;padding:0.08rem 0.42rem;border-radius:100px;background:var(--danger);}
 .nav-count.blue{background:var(--accent);}
 .nav-count.orange{background:var(--orange);}
@@ -722,16 +544,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .admin-av{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:white;}
 .admin-name{font-size:0.82rem;font-weight:500;}
 .admin-role{font-size:0.68rem;color:var(--muted);}
-
-/* MAIN */
 .main{margin-left:248px;flex:1;padding:2rem 2.5rem;min-height:100vh;}
 .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.8rem;}
 .page-title{font-family:'Syne',sans-serif;font-size:1.55rem;font-weight:800;letter-spacing:-0.02em;}
 .page-sub{font-size:0.83rem;color:var(--muted);margin-top:0.2rem;}
 .btn-sm{padding:0.45rem 1rem;border-radius:7px;border:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:500;background:var(--surface2);color:var(--text);cursor:pointer;transition:all 0.15s;}
 .btn-sm:hover{border-color:var(--accent);color:var(--accent);}
-
-/* STATS */
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;margin-bottom:1.8rem;}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.4rem;position:relative;overflow:hidden;}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--c,var(--accent));}
@@ -740,8 +558,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .stat-lbl{font-size:0.78rem;color:var(--muted);margin-top:0.2rem;}
 .stat-skel{height:2rem;background:rgba(255,255,255,0.06);border-radius:6px;margin:0.3rem 0;animation:shimmer 1.5s infinite;}
 @keyframes shimmer{0%,100%{opacity:.4}50%{opacity:.9}}
-
-/* ALERT CARDS */
 .alert-card{display:flex;align-items:center;gap:1.2rem;padding:1.2rem 1.5rem;border-radius:14px;margin-bottom:1rem;border:1px solid;transition:all 0.2s;}
 .alert-card.orange{background:rgba(255,128,64,0.07);border-color:rgba(255,128,64,0.2);}
 .alert-card.yellow{background:rgba(245,166,35,0.07);border-color:rgba(245,166,35,0.2);}
@@ -751,8 +567,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .alert-icon{font-size:1.8rem;}
 .alert-title{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;margin-bottom:0.25rem;}
 .alert-sub{font-size:0.8rem;color:var(--muted);}
-
-/* TABLE CARD */
 .table-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:1.5rem;}
 .table-header{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);}
 .table-title{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;}
@@ -765,8 +579,6 @@ tbody tr{border-bottom:1px solid rgba(255,255,255,0.03);transition:background 0.
 tbody tr:hover{background:rgba(255,255,255,0.02);}
 tbody tr:last-child{border-bottom:none;}
 td{padding:0.82rem 1.4rem;font-size:0.845rem;vertical-align:middle;}
-
-/* USER CELL */
 .ucell{display:flex;align-items:center;gap:0.7rem;}
 .uav{width:30px;height:30px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:600;flex-shrink:0;}
 .uname{font-weight:500;font-size:0.845rem;}
@@ -775,42 +587,28 @@ td{padding:0.82rem 1.4rem;font-size:0.845rem;vertical-align:middle;}
 .role-tag.buyer{background:rgba(255,255,255,0.05);color:var(--muted);}
 .role-tag.admin{background:rgba(255,128,64,0.12);color:#FF8040;}
 .ver-badge{display:inline-flex;align-items:center;gap:0.2rem;font-size:0.68rem;font-weight:700;color:var(--orange);background:rgba(255,128,64,0.1);border:1px solid rgba(255,128,64,0.25);padding:0.15rem 0.5rem;border-radius:100px;}
-
-/* ACTION BUTTONS */
 .action-btn{padding:0.26rem 0.62rem;border-radius:5px;border:1px solid var(--border);background:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.72rem;cursor:pointer;transition:all 0.15s;margin-right:0.3rem;}
 .action-btn:hover{border-color:var(--accent);color:var(--accent);}
 .action-btn.danger:hover{border-color:var(--danger);color:var(--danger);}
 .action-btn.success:hover{border-color:var(--success);color:var(--success);}
 .action-btn.warn:hover{border-color:var(--warn);color:var(--warn);}
-
-/* PRODUCT CELL */
 .product-cell{display:flex;align-items:center;gap:0.8rem;}
 .product-thumb{width:46px;height:46px;border-radius:9px;background:rgba(255,255,255,0.05);border:1px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-.product-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-.product-thumb-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:rgba(232,234,240,0.3);}
+.product-thumb-fallback{font-size:1.3rem;color:rgba(232,234,240,0.3);}
 .product-name{font-weight:500;font-size:0.845rem;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .product-meta{font-size:0.7rem;color:var(--muted);margin-top:0.1rem;}
 .cat-pill{font-size:0.68rem;background:rgba(255,255,255,0.06);color:rgba(232,234,240,0.55);padding:0.16rem 0.52rem;border-radius:100px;white-space:nowrap;}
-
-/* INFO BOX */
-.info-box{background:rgba(79,124,255,0.07);border:1px solid rgba(79,124,255,0.18);border-radius:10px;padding:1rem 1.2rem;font-size:0.82rem;color:rgba(232,234,240,0.65);line-height:1.6;margin-bottom:1.2rem;}
-.info-box code{background:rgba(255,255,255,0.08);padding:0.1rem 0.35rem;border-radius:4px;font-size:0.78rem;color:#7dd3fc;}
-
-/* FILTER TABS */
 .filter-tabs{display:flex;gap:0.5rem;margin-bottom:1.2rem;flex-wrap:wrap;}
 .filter-tab{padding:0.45rem 1rem;border:1px solid var(--border);border-radius:100px;font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:500;background:var(--surface2);color:var(--muted);cursor:pointer;transition:all 0.15s;}
 .filter-tab:hover{border-color:var(--accent);color:var(--text);}
 .filter-tab.active{background:rgba(79,124,255,0.12);border-color:var(--accent);color:var(--accent);font-weight:600;}
-
-/* VERIFICATION CARDS */
 .ver-list{display:flex;flex-direction:column;gap:1rem;}
-.ver-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;transition:all 0.15s;}
+.ver-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;}
 .ver-card.pending{border-left:3px solid var(--warn);}
 .ver-card.approved{border-left:3px solid var(--orange);}
 .ver-card.rejected{border-left:3px solid var(--danger);opacity:0.7;}
 .ver-card-top{display:flex;align-items:flex-start;gap:1rem;margin-bottom:1.2rem;}
 .ver-av{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#c84b31,#ff6b35);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:white;flex-shrink:0;}
-.ver-identity{}
 .ver-name{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:0.15rem;}
 .ver-email{font-size:0.78rem;color:var(--muted);margin-bottom:0.2rem;}
 .ver-meta{font-size:0.73rem;color:rgba(232,234,240,0.3);}
