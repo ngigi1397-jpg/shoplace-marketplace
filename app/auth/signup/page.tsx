@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -20,6 +20,7 @@ const KENYA_COUNTIES = [
 
 function SignUpForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const roleParam = searchParams.get("role") as "buyer" | "seller" | null;
 
   const [form, setForm] = useState({
@@ -28,7 +29,6 @@ function SignUpForm() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
@@ -52,7 +52,17 @@ function SignUpForm() {
     setLoading(true);
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email: form.email, password: form.password,
+        email: form.email,
+        password: form.password,
+        options: {
+          data: {
+            full_name: form.full_name,
+            phone: form.phone,
+            role: form.role,
+            county: form.county,
+            constituency: form.constituency,
+          }
+        }
       });
       if (signUpError) throw new Error(signUpError.message);
       if (!data.user) throw new Error("Failed to create account.");
@@ -69,40 +79,15 @@ function SignUpForm() {
         is_suspended: false,
       });
       if (profileError) throw new Error(profileError.message);
-      setSuccess(true);
+
+      // Redirect to verify page with email
+      router.push(`/auth/verify?email=${encodeURIComponent(form.email)}&role=${form.role}`);
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
-
-  if (success) {
-    return (
-      <>
-        <style>{css}</style>
-        <div className="auth-page">
-          <div className="success-card">
-            <div className="s-icon">{form.role === "seller" ? "🏪" : "🛍️"}</div>
-            <h2>Account Created!</h2>
-            <div className="s-badge">{form.role === "seller" ? "Seller Account" : "Buyer Account"}</div>
-            <p>Welcome to Shoplace, <strong>{form.full_name.split(" ")[0]}</strong>! Your account is ready.</p>
-            <p className="s-note">
-              {form.role === "seller"
-                ? "Login and open your shop to start selling."
-                : "Login to browse products and contact sellers."}
-            </p>
-            <div className="s-btns">
-              <a href="/auth/login" className="btn-solid">
-                {form.role === "seller" ? "Login & Open Shop →" : "Login & Start Shopping →"}
-              </a>
-              <a href="/" className="btn-ghost">Go to Homepage</a>
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
 
   return (
     <>
@@ -155,7 +140,6 @@ function SignUpForm() {
               <h3>Create Account</h3>
               <p className="form-sub">Fill in your details below to get started</p>
 
-              {/* ROLE TOGGLE */}
               <div className="role-toggle">
                 <div className={`rtab ${form.role === "buyer" ? "active" : ""}`} onClick={() => update("role", "buyer")}>
                   🛍️ I want to Buy
@@ -280,11 +264,4 @@ a{text-decoration:none;color:inherit;}
 .btn-ghost:hover{background:var(--ink);color:white;}
 .form-terms{font-size:0.72rem;color:rgba(13,13,13,0.28);text-align:center;margin-top:0.9rem;line-height:1.5;}
 .form-terms a{color:var(--rust);}
-.success-card{background:white;border-radius:24px;border:1px solid var(--border);padding:3rem;text-align:center;max-width:440px;box-shadow:0 16px 48px rgba(0,0,0,0.07);}
-.s-icon{font-size:3rem;margin-bottom:1rem;}
-.success-card h2{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;letter-spacing:-0.02em;margin-bottom:0.8rem;}
-.s-badge{display:inline-flex;padding:0.28rem 0.9rem;background:rgba(200,75,49,0.08);border:1px solid rgba(200,75,49,0.15);border-radius:100px;font-size:0.72rem;font-weight:600;color:var(--rust);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:1rem;}
-.success-card p{font-size:0.87rem;color:rgba(13,13,13,0.5);line-height:1.7;margin-bottom:0.5rem;}
-.s-note{color:rgba(13,13,13,0.38)!important;font-size:0.8rem!important;margin-bottom:1.5rem!important;}
-.s-btns{display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-top:1rem;}
 `;
