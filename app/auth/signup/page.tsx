@@ -28,6 +28,7 @@ function SignUpForm() {
     county: "", constituency: "", role: roleParam || "buyer",
   });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -37,6 +38,23 @@ function SignUpForm() {
 
   const update = (field: string, value: string) =>
     setForm(prev => ({ ...prev, [field]: value }));
+
+  const handleGoogleSignUp = async () => {
+    setError("");
+    setGoogleLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?role=${form.role}`,
+        },
+      });
+      if (error) throw new Error(error.message);
+    } catch (err: any) {
+      setError(err.message || "Google sign-in failed.");
+      setGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     setError("");
@@ -93,8 +111,6 @@ function SignUpForm() {
       <style>{css}</style>
       <div className="auth-page">
         <div className="auth-grid">
-
-          {/* LEFT - hidden on mobile */}
           <div className="auth-left">
             <a href="/" className="auth-logo">Sho<span>place</span></a>
             <div className="auth-left-body">
@@ -105,27 +121,15 @@ function SignUpForm() {
               <p>Join Kenyans buying and selling on Shoplace.</p>
               <ul className="perks">
                 {form.role === "seller" ? (
-                  <>
-                    <li>✓ Get a unique shop number</li>
-                    <li>✓ List unlimited products</li>
-                    <li>✓ Offer your services</li>
-                    <li>✓ Reach buyers in your county</li>
-                    <li>✓ 100% free to start</li>
-                  </>
+                  <><li>✓ Get a unique shop number</li><li>✓ List unlimited products</li><li>✓ Offer your services</li><li>✓ Reach buyers in your county</li><li>✓ 100% free to start</li></>
                 ) : (
-                  <>
-                    <li>✓ Browse products from all 47 counties</li>
-                    <li>✓ Contact sellers directly via WhatsApp</li>
-                    <li>✓ Find services near you</li>
-                    <li>✓ Completely free to join</li>
-                  </>
+                  <><li>✓ Browse products from all 47 counties</li><li>✓ Contact sellers directly via WhatsApp</li><li>✓ Find services near you</li><li>✓ Completely free to join</li></>
                 )}
               </ul>
               <div className="switch-role">
                 {form.role === "seller"
                   ? <><span>Want to buy instead?</span> <a href="/auth/signup?role=buyer">Switch to Buyer →</a></>
-                  : <><span>Want to sell?</span> <a href="/auth/signup?role=seller">Switch to Seller →</a></>
-                }
+                  : <><span>Want to sell?</span> <a href="/auth/signup?role=seller">Switch to Seller →</a></>}
               </div>
             </div>
             <div className="auth-left-footer">
@@ -133,66 +137,48 @@ function SignUpForm() {
             </div>
           </div>
 
-          {/* RIGHT */}
           <div className="auth-right">
             <div className="form-wrap">
-
-              {/* Mobile-only logo */}
               <a href="/" className="mobile-logo">Sho<span>place</span></a>
-
               <h3>Create Account</h3>
               <p className="form-sub">Fill in your details below to get started</p>
 
               <div className="role-toggle">
-                <div className={`rtab ${form.role === "buyer" ? "active" : ""}`} onClick={() => update("role", "buyer")}>
-                  🛍️ I want to Buy
-                </div>
-                <div className={`rtab ${form.role === "seller" ? "active" : ""}`} onClick={() => update("role", "seller")}>
-                  🏪 I want to Sell
-                </div>
+                <div className={`rtab ${form.role === "buyer" ? "active" : ""}`} onClick={() => update("role", "buyer")}>🛍️ I want to Buy</div>
+                <div className={`rtab ${form.role === "seller" ? "active" : ""}`} onClick={() => update("role", "seller")}>🏪 I want to Sell</div>
               </div>
 
-              <div className="fg">
-                <label>Full Name *</label>
-                <input type="text" placeholder="e.g. John Kamau" value={form.full_name} onChange={e => update("full_name", e.target.value)} />
-              </div>
+              {/* GOOGLE BUTTON */}
+              <button className="btn-google" onClick={handleGoogleSignUp} disabled={googleLoading}>
+                {googleLoading ? <span className="google-spinner" /> : (
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                    <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+                    <path d="M3.964 10.707A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+                    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                  </svg>
+                )}
+                {googleLoading ? "Redirecting..." : `Continue with Google as ${form.role === "seller" ? "Seller" : "Buyer"}`}
+              </button>
 
-              <div className="fg">
-                <label>Email Address *</label>
-                <input type="email" placeholder="you@example.com" value={form.email} onChange={e => update("email", e.target.value)} />
-              </div>
+              <div className="divider"><span>or sign up with email</span></div>
 
-              <div className="fg">
-                <label>Phone Number *</label>
-                <input type="tel" placeholder="+254 7XX XXX XXX" value={form.phone} onChange={e => update("phone", e.target.value)} />
-              </div>
+              <div className="fg"><label>Full Name *</label><input type="text" placeholder="e.g. John Kamau" value={form.full_name} onChange={e => update("full_name", e.target.value)} /></div>
+              <div className="fg"><label>Email Address *</label><input type="email" placeholder="you@example.com" value={form.email} onChange={e => update("email", e.target.value)} /></div>
+              <div className="fg"><label>Phone Number *</label><input type="tel" placeholder="+254 7XX XXX XXX" value={form.phone} onChange={e => update("phone", e.target.value)} /></div>
 
               <div className="form-row">
-                <div className="fg">
-                  <label>County *</label>
-                  <select value={form.county} onChange={e => update("county", e.target.value)}>
-                    <option value="">Select county</option>
-                    {KENYA_COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="fg">
-                  <label>Constituency</label>
-                  <input type="text" placeholder="e.g. Westlands" value={form.constituency} onChange={e => update("constituency", e.target.value)} />
-                </div>
+                <div className="fg"><label>County *</label><select value={form.county} onChange={e => update("county", e.target.value)}><option value="">Select county</option>{KENYA_COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                <div className="fg"><label>Constituency</label><input type="text" placeholder="e.g. Westlands" value={form.constituency} onChange={e => update("constituency", e.target.value)} /></div>
               </div>
 
-              <div className="fg">
-                <label>Password *</label>
+              <div className="fg"><label>Password *</label>
                 <div className="pw-wrap">
                   <input type={showPassword ? "text" : "password"} placeholder="Min. 8 characters" value={form.password} onChange={e => update("password", e.target.value)} />
                   <button className="pw-toggle" onClick={() => setShowPassword(!showPassword)}>{showPassword ? "Hide" : "Show"}</button>
                 </div>
               </div>
-
-              <div className="fg">
-                <label>Confirm Password *</label>
-                <input type="password" placeholder="Repeat your password" value={form.confirm_password} onChange={e => update("confirm_password", e.target.value)} onKeyDown={e => e.key === "Enter" && handleSubmit()} />
-              </div>
+              <div className="fg"><label>Confirm Password *</label><input type="password" placeholder="Repeat your password" value={form.confirm_password} onChange={e => update("confirm_password", e.target.value)} onKeyDown={e => e.key === "Enter" && handleSubmit()} /></div>
 
               {error && <div className="form-error">⚠️ {error}</div>}
 
@@ -200,16 +186,10 @@ function SignUpForm() {
                 {loading ? "Creating Account..." : `Create ${form.role === "seller" ? "Seller" : "Buyer"} Account →`}
               </button>
 
-              <p className="form-terms">
-                By signing up you agree to our <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.
-              </p>
-
-              <div className="signin-prompt">
-                Already have an account? <a href="/auth/login">Sign in →</a>
-              </div>
+              <p className="form-terms">By signing up you agree to our <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</p>
+              <div className="signin-prompt">Already have an account? <a href="/auth/login">Sign in →</a></div>
             </div>
           </div>
-
         </div>
       </div>
     </>
@@ -252,9 +232,16 @@ a{text-decoration:none;color:inherit;}
 .mobile-logo span{color:var(--rust);}
 .form-wrap h3{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;margin-bottom:0.3rem;}
 .form-sub{font-size:0.82rem;color:rgba(13,13,13,0.4);margin-bottom:1.5rem;}
-.role-toggle{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;background:var(--cream);border-radius:10px;padding:0.3rem;margin-bottom:1.3rem;}
+.role-toggle{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;background:var(--cream);border-radius:10px;padding:0.3rem;margin-bottom:1rem;}
 .rtab{padding:0.6rem;text-align:center;border-radius:7px;font-size:0.82rem;font-weight:500;color:rgba(13,13,13,0.4);cursor:pointer;transition:all .2s;}
 .rtab.active{background:white;color:var(--ink);font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.07);}
+.btn-google{width:100%;display:flex;align-items:center;justify-content:center;gap:0.65rem;padding:0.75rem 1rem;background:white;border:1.5px solid rgba(13,13,13,0.15);border-radius:100px;font-family:'DM Sans',sans-serif;font-size:0.87rem;font-weight:600;color:var(--ink);cursor:pointer;transition:all .2s;margin-bottom:0.3rem;}
+.btn-google:hover:not(:disabled){border-color:rgba(13,13,13,0.35);box-shadow:0 2px 12px rgba(0,0,0,0.08);transform:translateY(-1px);}
+.btn-google:disabled{opacity:0.6;cursor:not-allowed;}
+.google-spinner{width:18px;height:18px;border:2px solid rgba(13,13,13,0.15);border-top-color:var(--rust);border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.divider{display:flex;align-items:center;gap:0.8rem;margin:0.8rem 0;color:rgba(13,13,13,0.28);font-size:0.74rem;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
 .fg{margin-bottom:0.9rem;}
 .fg label{display:block;font-size:0.71rem;font-weight:600;color:rgba(13,13,13,0.42);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem;}
@@ -273,7 +260,6 @@ a{text-decoration:none;color:inherit;}
 .form-terms a{color:var(--rust);}
 .signin-prompt{text-align:center;font-size:0.82rem;color:rgba(13,13,13,0.4);margin-top:1rem;}
 .signin-prompt a{color:var(--rust);font-weight:600;}
-
 @media(max-width:768px){
   .auth-grid{grid-template-columns:1fr;}
   .auth-left{display:none;}
