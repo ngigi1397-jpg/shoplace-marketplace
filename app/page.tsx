@@ -298,8 +298,8 @@ export default function HomePage() {
           <div className="foot-col">
             <h4>Support</h4>
             <ul>
-              <li><a href="/help">Help Center     shoplacekenya@gmail.com</a></li>
-              <li><a href="/contact">Contact Us    shoplacekenya@gmail.com</a></li>
+              <li><a href="/help">Help Center:     shoplacekenya@gmail.com</a></li>
+              <li><a href="/contact">Contact Us:    shoplacekenya@gmail.com</a></li>
               <li><a href="/terms">Terms of Service</a></li>
               <li><a href="/privacy">Privacy Policy</a></li>
             </ul>
