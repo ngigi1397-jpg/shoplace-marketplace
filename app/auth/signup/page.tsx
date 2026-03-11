@@ -80,7 +80,6 @@ function SignUpForm() {
       });
       if (profileError) throw new Error(profileError.message);
 
-      // Redirect to verify page with email
       router.push(`/auth/verify?email=${encodeURIComponent(form.email)}&role=${form.role}`);
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please try again.");
@@ -95,7 +94,7 @@ function SignUpForm() {
       <div className="auth-page">
         <div className="auth-grid">
 
-          {/* LEFT */}
+          {/* LEFT - hidden on mobile */}
           <div className="auth-left">
             <a href="/" className="auth-logo">Sho<span>place</span></a>
             <div className="auth-left-body">
@@ -137,6 +136,10 @@ function SignUpForm() {
           {/* RIGHT */}
           <div className="auth-right">
             <div className="form-wrap">
+
+              {/* Mobile-only logo */}
+              <a href="/" className="mobile-logo">Sho<span>place</span></a>
+
               <h3>Create Account</h3>
               <p className="form-sub">Fill in your details below to get started</p>
 
@@ -200,6 +203,10 @@ function SignUpForm() {
               <p className="form-terms">
                 By signing up you agree to our <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.
               </p>
+
+              <div className="signin-prompt">
+                Already have an account? <a href="/auth/login">Sign in →</a>
+              </div>
             </div>
           </div>
 
@@ -219,12 +226,12 @@ export default function SignUpPage() {
 
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
-:root{--ink:#0d0d0d;--cream:#f5f0e8;--rust:#c84b31;--sage:#3d6b4f;--border:rgba(13,13,13,0.1);}
+:root{--ink:#0d0d0d;--cream:#f5f0e8;--rust:#c84b31;--border:rgba(13,13,13,0.1);}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);}
 a{text-decoration:none;color:inherit;}
-.auth-page{min-height:100vh;background:var(--cream);display:flex;align-items:center;justify-content:center;padding:2rem;}
-.auth-grid{display:grid;grid-template-columns:1fr 1.2fr;width:100%;max-width:920px;border-radius:24px;overflow:hidden;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,0.08);}
+.auth-page{min-height:100vh;background:var(--cream);}
+.auth-grid{display:grid;grid-template-columns:1fr 1.2fr;min-height:100vh;}
 .auth-left{background:var(--ink);padding:3rem;display:flex;flex-direction:column;position:relative;overflow:hidden;}
 .auth-left::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 70%,rgba(200,75,49,0.2),transparent 55%);}
 .auth-logo{position:relative;z-index:1;font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:white;letter-spacing:-0.04em;margin-bottom:2.5rem;}
@@ -239,8 +246,10 @@ a{text-decoration:none;color:inherit;}
 .switch-role a{color:var(--rust);font-weight:500;}
 .auth-left-footer{position:relative;z-index:1;margin-top:2rem;font-size:0.78rem;color:rgba(255,255,255,0.25);}
 .auth-left-footer a{color:rgba(255,255,255,0.5);font-weight:500;}
-.auth-right{background:white;padding:3rem;}
-.form-wrap{max-width:400px;margin:0 auto;}
+.auth-right{background:white;padding:3rem;overflow-y:auto;}
+.form-wrap{max-width:400px;margin:0 auto;padding:1rem 0;}
+.mobile-logo{display:none;font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;letter-spacing:-0.04em;color:var(--ink);margin-bottom:1.8rem;}
+.mobile-logo span{color:var(--rust);}
 .form-wrap h3{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;margin-bottom:0.3rem;}
 .form-sub{font-size:0.82rem;color:rgba(13,13,13,0.4);margin-bottom:1.5rem;}
 .role-toggle{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;background:var(--cream);border-radius:10px;padding:0.3rem;margin-bottom:1.3rem;}
@@ -260,8 +269,18 @@ a{text-decoration:none;color:inherit;}
 .btn-solid:hover:not(:disabled){background:#a83a22;transform:translateY(-1px);}
 .btn-solid:disabled{opacity:0.6;cursor:not-allowed;}
 .btn-full{width:100%;padding:0.85rem;}
-.btn-ghost{padding:0.55rem 1.2rem;border:1.5px solid rgba(13,13,13,0.2);border-radius:100px;font-size:0.83rem;font-weight:500;color:var(--ink);background:transparent;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;}
-.btn-ghost:hover{background:var(--ink);color:white;}
 .form-terms{font-size:0.72rem;color:rgba(13,13,13,0.28);text-align:center;margin-top:0.9rem;line-height:1.5;}
 .form-terms a{color:var(--rust);}
+.signin-prompt{text-align:center;font-size:0.82rem;color:rgba(13,13,13,0.4);margin-top:1rem;}
+.signin-prompt a{color:var(--rust);font-weight:600;}
+
+@media(max-width:768px){
+  .auth-grid{grid-template-columns:1fr;}
+  .auth-left{display:none;}
+  .auth-right{padding:2rem 1.5rem;background:var(--cream);}
+  .form-wrap{padding:0;}
+  .mobile-logo{display:block;}
+  .form-row{grid-template-columns:1fr;}
+  .form-wrap h3{font-size:1.4rem;}
+}
 `;

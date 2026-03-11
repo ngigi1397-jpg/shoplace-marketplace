@@ -37,7 +37,7 @@ function LoginForm() {
       <div className="auth-page">
         <div className="auth-split">
 
-          {/* LEFT */}
+          {/* LEFT - hidden on mobile */}
           <div className="auth-left">
             <a href="/" className="sp-logo">Sho<span>place</span></a>
             <div className="auth-left-content">
@@ -58,6 +58,10 @@ function LoginForm() {
           {/* RIGHT */}
           <div className="auth-right">
             <div className="auth-form-wrap">
+
+              {/* Mobile-only logo */}
+              <a href="/" className="mobile-logo">Sho<span>place</span></a>
+
               <h3>Sign in to your account</h3>
               <p className="form-sub">
                 {redirect !== "/" && redirect !== "" ? (
@@ -105,7 +109,7 @@ function LoginForm() {
               </div>
 
               <div className="admin-note">
-                Admin? <a href="/admin/login">Go to Admin Portal →</a>
+                Admin? <a href="/admin">Go to Admin Portal →</a>
               </div>
             </div>
           </div>
@@ -145,6 +149,8 @@ a{text-decoration:none;color:inherit;}
 .auth-left-footer a:hover{color:white;}
 .auth-right{background:var(--cream);padding:3rem;display:flex;align-items:center;justify-content:center;}
 .auth-form-wrap{width:100%;max-width:420px;}
+.mobile-logo{display:none;font-family:'Syne',sans-serif;font-weight:800;font-size:1.6rem;letter-spacing:-.04em;color:var(--ink);margin-bottom:1.8rem;}
+.mobile-logo span{color:var(--rust);}
 .auth-form-wrap h3{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;letter-spacing:-.02em;margin-bottom:.3rem;}
 .form-sub{font-size:.85rem;color:rgba(13,13,13,.42);margin-bottom:2rem;}
 .redirect-notice{background:rgba(200,75,49,.07);border:1px solid rgba(200,75,49,.15);color:var(--rust);padding:.35rem .75rem;border-radius:6px;font-size:.8rem;}
@@ -166,4 +172,12 @@ a{text-decoration:none;color:inherit;}
 .admin-note{text-align:center;font-size:.76rem;color:rgba(13,13,13,.28);margin-top:1.2rem;}
 .admin-note a{color:rgba(13,13,13,.4);font-weight:500;}
 .admin-note a:hover{color:var(--ink);}
+
+@media(max-width:768px){
+  .auth-split{grid-template-columns:1fr;}
+  .auth-left{display:none;}
+  .auth-right{padding:2rem 1.5rem;align-items:flex-start;min-height:100vh;}
+  .mobile-logo{display:block;}
+  .auth-form-wrap h3{font-size:1.4rem;}
+}
 `;
