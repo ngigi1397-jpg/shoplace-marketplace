@@ -307,7 +307,7 @@ export default function HomePage() {
         </div>
         <div className="foot-bottom">
           <p>© 2025 Shoplace. All rights reserved.</p>
-          <p>Built with ❤️ for Kenya</p>
+          <p>❤️ for Kenya</p>
         </div>
       </footer>
 
