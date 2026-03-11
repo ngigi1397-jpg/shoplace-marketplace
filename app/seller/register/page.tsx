@@ -25,6 +25,7 @@ const CATEGORIES = [
 
 export default function SellerRegisterPage() {
   const [user, setUser] = useState<any>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -44,12 +45,27 @@ export default function SellerRegisterPage() {
   });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
         window.location.href = "/auth/login?redirect=/seller/register";
         return;
       }
       setUser(session.user);
+
+      // ── ROLE CHECK ──────────────────────────────────────
+      const { data: prof } = await supabase
+        .from("users")
+        .select("role, phone")
+        .eq("id", session.user.id)
+        .single();
+
+      setRole(prof?.role ?? null);
+
+      // Pre-fill phone if available
+      if (prof?.phone) {
+        setForm(f => ({ ...f, phone: prof.phone, whatsapp: prof.phone }));
+      }
+
       setLoading(false);
     });
   }, []);
@@ -64,14 +80,11 @@ export default function SellerRegisterPage() {
     }
     setSubmitting(true);
     try {
-      // Generate unique shop number
       const { count } = await supabase.from("shops").select("*", { count: "exact", head: true });
       const newShopNumber = String((count || 0) + 1).padStart(5, "0");
 
-      // Update user role to seller
       await supabase.from("users").update({ role: "seller" }).eq("id", user.id);
 
-      // Create the shop
       const { error: shopError } = await supabase.from("shops").insert({
         owner_id: user.id,
         shop_name: form.shop_name,
@@ -98,8 +111,40 @@ export default function SellerRegisterPage() {
     }
   };
 
+  // ── LOADING ──────────────────────────────────────────
   if (loading) return <div style={{ minHeight: "100vh", background: "#f5f0e8" }} />;
 
+  // ── BUYER BLOCK ──────────────────────────────────────
+  if (role === "buyer") {
+    return (
+      <>
+        <style>{css}</style>
+        <div className="auth-page">
+          <div className="success-wrap">
+            <div className="blocked-card">
+              <div className="blocked-icon">🚫</div>
+              <h2>Buyers Cannot Open Shops</h2>
+              <p>
+                Your account is registered as a <strong>buyer</strong>. Buyer accounts cannot open shops on Shoplace.
+              </p>
+              <p style={{ marginTop: "0.6rem" }}>
+                To sell on Shoplace, please create a new account and select <strong>Seller</strong> during sign-up.
+              </p>
+              <div className="s-btns" style={{ marginTop: "1.8rem" }}>
+                <a href="/buyer/saved" className="btn-solid">Go to My Saved →</a>
+                <a href="/" className="btn-ghost">Back to Home</a>
+              </div>
+              <p className="form-terms" style={{ marginTop: "1.2rem" }}>
+                Need help? <a href="/contact">Contact support</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // ── SUCCESS ──────────────────────────────────────────
   if (success) {
     return (
       <>
@@ -110,7 +155,7 @@ export default function SellerRegisterPage() {
               <div className="s-icon">🎉</div>
               <h2>Shop Application Submitted!</h2>
               <div className="shop-num-badge">SHOP #{shopNumber}</div>
-              <p>Your shop has been registered and is pending admin approval. You will be notified once approved. In the meantime you can set up your seller dashboard.</p>
+              <p>Your shop has been registered and is pending admin approval. You will be notified once approved.</p>
               <div className="s-btns">
                 <a href="/seller/dashboard" className="btn-solid">Go to Dashboard →</a>
                 <a href="/" className="btn-ghost">Back to Home</a>
@@ -122,12 +167,12 @@ export default function SellerRegisterPage() {
     );
   }
 
+  // ── FORM ─────────────────────────────────────────────
   return (
     <>
       <style>{css}</style>
       <div className="reg-page">
 
-        {/* NAV */}
         <nav className="sp-nav">
           <a href="/" className="sp-logo">Sho<span>place</span></a>
           <div className="sp-nav-actions">
@@ -137,7 +182,7 @@ export default function SellerRegisterPage() {
         </nav>
 
         <div className="reg-layout">
-          {/* LEFT — info */}
+          {/* LEFT */}
           <div className="reg-left">
             <div className="reg-left-inner">
               <div className="reg-step-label">Step 1 of 1</div>
@@ -145,7 +190,7 @@ export default function SellerRegisterPage() {
               <p>Fill in your shop details to get started. Your application will be reviewed by our team within 24 hours.</p>
               <div className="reg-perks">
                 <div className="perk">🏪 Get a unique shop number</div>
-                <div className="perk">📦 List unlimited products</div>
+                <div className="perk">📦 List products &amp; services</div>
                 <div className="perk">⚙️ Offer your services</div>
                 <div className="perk">📍 Reach buyers in your county</div>
                 <div className="perk">✅ Verified seller badge</div>
@@ -154,7 +199,7 @@ export default function SellerRegisterPage() {
             </div>
           </div>
 
-          {/* RIGHT — form */}
+          {/* RIGHT */}
           <div className="reg-right">
             <div className="reg-form">
               <h3>Shop Details</h3>
@@ -211,7 +256,7 @@ export default function SellerRegisterPage() {
 
               <div className="fg">
                 <label>Instagram Handle <span style={{fontWeight:400,color:"rgba(13,13,13,0.35)",textTransform:"none",fontSize:"0.7rem"}}>(optional)</span></label>
-                <input type="text" placeholder="@yourshop — leave blank if you don't have one" value={form.instagram} onChange={e => update("instagram", e.target.value)} />
+                <input type="text" placeholder="@yourshop" value={form.instagram} onChange={e => update("instagram", e.target.value)} />
               </div>
 
               {error && <div className="form-error">⚠️ {error}</div>}
@@ -269,12 +314,24 @@ a{text-decoration:none;color:inherit;}
 .form-error{background:rgba(200,75,49,0.08);border:1px solid rgba(200,75,49,0.2);border-radius:8px;padding:0.75rem 1rem;font-size:0.82rem;color:var(--rust);margin-bottom:1rem;}
 .form-terms{font-size:0.75rem;color:rgba(13,13,13,0.35);text-align:center;margin-top:1rem;line-height:1.5;}
 .form-terms a{color:var(--rust);}
-.auth-page{min-height:100vh;background:var(--cream);display:flex;align-items:center;justify-content:center;}
-.success-wrap{padding:2rem;}
-.success-card{background:white;border-radius:24px;border:1px solid var(--border);padding:3.5rem;text-align:center;max-width:480px;}
-.s-icon{font-size:3.5rem;margin-bottom:1.2rem;}
-.success-card h2{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;letter-spacing:-0.02em;margin-bottom:1rem;}
+.auth-page{min-height:100vh;background:var(--cream);display:flex;align-items:center;justify-content:center;padding:2rem;}
+.success-wrap{width:100%;max-width:500px;}
+.success-card,.blocked-card{background:white;border-radius:24px;border:1px solid var(--border);padding:3.5rem;text-align:center;}
+.blocked-card{border-color:rgba(200,75,49,0.25);}
+.blocked-icon,.s-icon{font-size:3.5rem;margin-bottom:1.2rem;}
+.success-card h2,.blocked-card h2{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;letter-spacing:-0.02em;margin-bottom:1rem;}
+.blocked-card h2{color:var(--rust);}
+.blocked-card p,.success-card p{font-size:0.88rem;color:rgba(13,13,13,0.52);line-height:1.7;}
 .shop-num-badge{display:inline-block;background:var(--ink);color:white;font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;padding:0.5rem 1.5rem;border-radius:100px;margin-bottom:1.2rem;letter-spacing:0.05em;}
-.success-card p{font-size:0.88rem;color:rgba(13,13,13,0.52);line-height:1.7;margin-bottom:1.8rem;}
+.success-card p{margin-bottom:1.8rem;}
 .s-btns{display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;}
+
+@media(max-width:768px){
+  .sp-nav{padding:0.9rem 1.2rem;}
+  .nav-hi{display:none;}
+  .reg-layout{grid-template-columns:1fr;}
+  .reg-left{padding:2rem 1.5rem;min-height:auto;}
+  .reg-right{padding:1.5rem 1.2rem;}
+  .form-row{grid-template-columns:1fr;}
+}
 `;

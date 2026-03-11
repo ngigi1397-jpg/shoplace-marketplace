@@ -134,9 +134,13 @@ export default function HomePage() {
           <span>📦</span>
           <span>Browse</span>
         </a>
-        <a href="/search" className="mbn-item">
-          <span>🔍</span>
-          <span>Search</span>
+        <a href="/services" className="mbn-item">
+          <span>⚙️</span>
+          <span>Services</span>
+        </a>
+        <a href="/shops" className="mbn-item">
+          <span>🏬</span>
+          <span>Shops</span>
         </a>
         {user ? (
           role === "seller" ? (
