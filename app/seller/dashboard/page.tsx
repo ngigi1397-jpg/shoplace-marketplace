@@ -97,7 +97,7 @@ export default function SellerDashboard() {
       supabase.from("products").select("*").eq("shop_id", shopData.id).order("created_at", { ascending:false }),
       supabase.from("services").select("*").eq("shop_id", shopData.id).order("created_at", { ascending:false }),
       supabase.from("shop_views").select("*", { count:"exact", head:true }).eq("shop_id", shopData.id),
-      supabase.from("shop_reviews").select("*, users(full_name,email)").eq("shop_id", shopData.id).order("created_at", { ascending:false }),
+      supabase.from("ratings").select("*, users(full_name,email)").eq("shop_id", shopData.id).order("created_at", { ascending:false }),
       supabase.from("inquiries").select("*", { count:"exact", head:true }).eq("shop_id", shopData.id),
     ]);
     setProducts(prods || []);
@@ -108,7 +108,7 @@ export default function SellerDashboard() {
     setReviews(revs);
     setReviewCount(revs.length);
     if (revs.length > 0) {
-      const avg = revs.reduce((s: number, r: any) => s + r.rating, 0) / revs.length;
+      const avg = revs.reduce((s: number, r: any) => s + r.stars, 0) / revs.length;
       setRating(Math.round(avg * 10) / 10);
     } else { setRating(null); }
   };
@@ -538,7 +538,7 @@ export default function SellerDashboard() {
               <div className="sd-header">
                 <div>
                   <h1>Customer Reviews</h1>
-                  <p>{isPremium ? `${reviewCount} review${reviewCount!==1?"s":""} · ${rating?`${rating}★ average`:"No rating yet"}` : "Verified sellers only"}</p>
+                  <p>{isPremium ? `${reviewCount} rating${reviewCount!==1?"s":""} · ${rating?`${rating}★ average`:"No ratings yet"}` : "Verified sellers only"}</p>
                 </div>
               </div>
               {!isPremium ? (
@@ -559,7 +559,7 @@ export default function SellerDashboard() {
                         </div>
                         <div className="sd-rating-count">Based on {reviewCount} review{reviewCount!==1?"s":""}</div>
                         {[5,4,3,2,1].map(star => {
-                          const count = reviews.filter(r => r.rating===star).length;
+                          const count = reviews.filter(r => r.stars===star).length;
                           const pct = reviewCount>0?(count/reviewCount)*100:0;
                           return (
                             <div key={star} className="sd-rating-bar-row">
@@ -575,8 +575,8 @@ export default function SellerDashboard() {
                   {reviews.length === 0 ? (
                     <div className="sd-empty">
                       <div className="sd-empty-ico">⭐</div>
-                      <div className="sd-empty-title">No reviews yet</div>
-                      <div className="sd-empty-sub">When buyers visit your shop and leave a rating, it will appear here.</div>
+                      <div className="sd-empty-title">No ratings yet</div>
+                      <div className="sd-empty-sub">When buyers rate your shop, products or services, they will appear here.</div>
                     </div>
                   ) : (
                     <div className="sd-reviews-list">
@@ -587,11 +587,16 @@ export default function SellerDashboard() {
                               <div className="sd-review-av">{(r.users?.full_name||r.users?.email||"B")[0].toUpperCase()}</div>
                               <div>
                                 <div className="sd-review-name">{r.users?.full_name||r.users?.email?.split("@")[0]||"Buyer"}</div>
-                                <div className="sd-review-date">{fmtDate(r.created_at)}</div>
+                                <div className="sd-review-date">
+                                  {fmtDate(r.created_at)}
+                                  {r.product_id && <span className="sd-review-type">· Product rating</span>}
+                                  {r.service_id && <span className="sd-review-type">· Service rating</span>}
+                                  {!r.product_id && !r.service_id && <span className="sd-review-type">· Shop rating</span>}
+                                </div>
                               </div>
                             </div>
                             <div className="sd-review-stars">
-                              {[1,2,3,4,5].map(s => <span key={s} style={{color:s<=r.rating?"#f59e0b":"rgba(13,13,13,0.15)"}}>★</span>)}
+                              {[1,2,3,4,5].map(s => <span key={s} style={{color:s<=r.stars?"#f59e0b":"rgba(13,13,13,0.15)"}}>★</span>)}
                             </div>
                           </div>
                           {r.comment && <div className="sd-review-comment">{r.comment}</div>}
@@ -931,7 +936,10 @@ a{text-decoration:none;color:inherit;}
 .sd-rating-big{font-family:'Syne',sans-serif;font-size:3.5rem;font-weight:800;color:var(--rust);line-height:1;}
 .sd-rating-info{flex:1;}
 .sd-rating-stars{margin-bottom:0.3rem;}
-.sd-rating-count{font-size:0.78rem;color:rgba(13,13,13,0.42);margin-bottom:0.8rem;}
+.sd-rating-count{font-size:0.78rem;color:rgba(13,13,13,0.42);margin-bottom:0.5rem;}
+.sd-rating-breakdown{display:flex;gap:0.5rem;margin-bottom:0.7rem;flex-wrap:wrap;}
+.sd-rtype{font-size:0.68rem;padding:0.12rem 0.5rem;background:rgba(13,13,13,0.05);border-radius:100px;color:rgba(13,13,13,0.4);font-weight:500;}
+.sd-review-type{font-size:0.65rem;color:rgba(13,13,13,0.32);margin-left:0.35rem;font-weight:500;}
 .sd-rating-bar-row{display:flex;align-items:center;gap:0.6rem;font-size:0.72rem;color:rgba(13,13,13,0.45);margin-bottom:0.3rem;}
 .sd-rating-bar{flex:1;height:6px;background:rgba(13,13,13,0.07);border-radius:100px;overflow:hidden;}
 .sd-rating-bar-fill{height:100%;background:#f59e0b;border-radius:100px;}
