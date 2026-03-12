@@ -10,6 +10,19 @@ const supabase = createClient(
 const CATEGORIES = ["All","Plumbing","Electrical","Carpentry","Painting","Cleaning","Delivery","Design","Tutoring","Photography","Catering","Beauty & Hair","IT & Tech","Farming & Agriculture","Transport","Security","Events","Other"];
 const PRICE_LABEL: any = { fixed: "", hourly: "/hr", negotiable: "Negotiable", free: "Free" };
 
+function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [hover, setHover] = useState(0);
+  return (
+    <div style={{ display: "flex", gap: "0.3rem" }}>
+      {[1,2,3,4,5].map(s => (
+        <span key={s} onMouseEnter={() => setHover(s)} onMouseLeave={() => setHover(0)}
+          onClick={() => onChange(s)}
+          style={{ fontSize: "1.6rem", cursor: "pointer", color: s <= (hover || value) ? "#f5a623" : "rgba(13,13,13,0.15)", transition: "color .15s" }}>★</span>
+      ))}
+    </div>
+  );
+}
+
 export default function ServicesPage() {
   const [user, setUser] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
@@ -20,32 +33,36 @@ export default function ServicesPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [toast, setToast] = useState("");
 
+  const [ratingTarget, setRatingTarget] = useState<any>(null);
+  const [ratingStars, setRatingStars] = useState(0);
+  const [ratingComment, setRatingComment] = useState("");
+  const [submittingRating, setSubmittingRating] = useState(false);
+
+  const [reportTarget, setReportTarget] = useState<any>(null);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDetails, setReportDetails] = useState("");
+  const [submittingReport, setSubmittingReport] = useState(false);
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { window.location.href = "/auth/login?redirect=/services"; return; }
       setUser(session.user);
-
       const [{ data: servicesData }, { data: savedData }] = await Promise.all([
         supabase.from("services").select("*, shops(id, shop_name, shop_number, county, phone, is_verified)").eq("is_active", true).order("created_at", { ascending: false }),
         supabase.from("saved_services").select("service_id").eq("user_id", session.user.id),
       ]);
-
       setServices(servicesData || []);
       setSavedIds(new Set((savedData || []).map((s: any) => s.service_id)));
       setLoading(false);
     });
   }, []);
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(""), 2500);
-  };
-
   const toggleSave = async (e: React.MouseEvent, serviceId: string) => {
     e.stopPropagation();
     if (!user || savingId) return;
     setSavingId(serviceId);
-
     if (savedIds.has(serviceId)) {
       await supabase.from("saved_services").delete().eq("user_id", user.id).eq("service_id", serviceId);
       setSavedIds(prev => { const n = new Set(prev); n.delete(serviceId); return n; });
@@ -53,9 +70,36 @@ export default function ServicesPage() {
     } else {
       await supabase.from("saved_services").insert({ user_id: user.id, service_id: serviceId });
       setSavedIds(prev => new Set([...prev, serviceId]));
-      showToast("Service saved!");
+      showToast("Service saved! ❤️");
     }
     setSavingId(null);
+  };
+
+  const submitRating = async () => {
+    if (!ratingStars || !ratingTarget) return;
+    setSubmittingRating(true);
+    await supabase.from("ratings").upsert({
+      user_id: user.id,
+      service_id: ratingTarget.id,
+      shop_id: ratingTarget.shops?.id,
+      stars: ratingStars,
+      comment: ratingComment,
+    }, { onConflict: "user_id,service_id" });
+    setRatingTarget(null); setRatingStars(0); setRatingComment("");
+    showToast("Rating submitted! ⭐"); setSubmittingRating(false);
+  };
+
+  const submitReport = async () => {
+    if (!reportReason || !reportTarget) return;
+    setSubmittingReport(true);
+    await supabase.from("reports").insert({
+      reporter_id: user.id,
+      shop_id: reportTarget.shops?.id,
+      reason: reportReason,
+      details: reportDetails,
+    });
+    setReportTarget(null); setReportReason(""); setReportDetails("");
+    showToast("Report submitted. We'll review it."); setSubmittingReport(false);
   };
 
   const filtered = services.filter(s => {
@@ -68,8 +112,60 @@ export default function ServicesPage() {
     <>
       <style>{css}</style>
       {toast && <div className="toast">{toast}</div>}
-      <div className="page-wrap">
 
+      {/* ── RATING MODAL ── */}
+      {ratingTarget && (
+        <div className="modal-overlay" onClick={() => setRatingTarget(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-head">
+              <div className="modal-title">⭐ Rate this Service</div>
+              <button className="modal-close" onClick={() => setRatingTarget(null)}>✕</button>
+            </div>
+            <div className="modal-product-name">{ratingTarget.name}</div>
+            <div className="modal-shop">by {ratingTarget.shops?.shop_name}</div>
+            <div className="modal-stars-wrap">
+              <StarPicker value={ratingStars} onChange={setRatingStars} />
+              <span className="modal-stars-label">{["","Poor","Fair","Good","Very Good","Excellent"][ratingStars] || "Tap to rate"}</span>
+            </div>
+            <textarea className="modal-textarea" placeholder="Write a review (optional)..." value={ratingComment} onChange={e => setRatingComment(e.target.value)} rows={3} />
+            <div className="modal-actions">
+              <button className="modal-btn-cancel" onClick={() => setRatingTarget(null)}>Cancel</button>
+              <button className="modal-btn-submit" onClick={submitRating} disabled={!ratingStars || submittingRating}>{submittingRating ? "Submitting..." : "Submit Rating"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── REPORT MODAL ── */}
+      {reportTarget && (
+        <div className="modal-overlay" onClick={() => setReportTarget(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-head">
+              <div className="modal-title">🚩 Report Seller</div>
+              <button className="modal-close" onClick={() => setReportTarget(null)}>✕</button>
+            </div>
+            <div className="modal-product-name">{reportTarget.shops?.shop_name}</div>
+            <div className="modal-shop">Reporting via service: {reportTarget.name}</div>
+            <div className="modal-label">Reason *</div>
+            <select className="modal-select" value={reportReason} onChange={e => setReportReason(e.target.value)}>
+              <option value="">Select a reason...</option>
+              <option>Fake or misleading service</option>
+              <option>Scam / fraud</option>
+              <option>Wrong price listed</option>
+              <option>Inappropriate content</option>
+              <option>Service not as described</option>
+              <option>Other</option>
+            </select>
+            <textarea className="modal-textarea" placeholder="Additional details (optional)..." value={reportDetails} onChange={e => setReportDetails(e.target.value)} rows={3} />
+            <div className="modal-actions">
+              <button className="modal-btn-cancel" onClick={() => setReportTarget(null)}>Cancel</button>
+              <button className="modal-btn-report" onClick={submitReport} disabled={!reportReason || submittingReport}>{submittingReport ? "Submitting..." : "Submit Report"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="page-wrap">
         <nav className="sp-nav">
           <a href="/" className="sp-logo">Sho<span>place</span></a>
           <ul className="sp-nav-links">
@@ -106,8 +202,7 @@ export default function ServicesPage() {
             <div className="services-grid">
               {[...Array(8)].map((_, i) => (
                 <div className="skeleton-card" key={i}>
-                  <div className="sk-top" />
-                  <div className="sk-body"><div className="sk-line w60" /><div className="sk-line w90" /><div className="sk-line w40" /></div>
+                  <div className="sk-top" /><div className="sk-body"><div className="sk-line w60" /><div className="sk-line w90" /><div className="sk-line w40" /></div>
                 </div>
               ))}
             </div>
@@ -122,52 +217,35 @@ export default function ServicesPage() {
               <div className="results-count">{filtered.length} service{filtered.length !== 1 ? "s" : ""} found{category !== "All" && ` in ${category}`}{search && ` for "${search}"`}</div>
               <div className="services-grid">
                 {filtered.map(s => (
-                  <div className="service-card" key={s.id} onClick={() => window.location.href = `/shops/${s.shops?.id || ""}`}>
+                  <div className="service-card" key={s.id}>
                     <div className="service-top">
                       <div className="service-icon">⚙️</div>
                       <div className="service-top-right">
                         <div className="service-cat">{s.category}</div>
-                        <button
-                          className={"save-btn" + (savedIds.has(s.id) ? " saved" : "")}
-                          onClick={e => toggleSave(e, s.id)}
-                          disabled={savingId === s.id}
-                          title={savedIds.has(s.id) ? "Remove from saved" : "Save service"}
-                        >
+                        <button className={"save-btn" + (savedIds.has(s.id) ? " saved" : "")} onClick={e => toggleSave(e, s.id)} disabled={savingId === s.id} title={savedIds.has(s.id) ? "Remove from saved" : "Save service"}>
                           {savedIds.has(s.id) ? "♥" : "♡"}
                         </button>
                       </div>
                     </div>
-                    <div className="service-shop-row">
+                    <div className="service-shop-row" onClick={() => window.location.href = `/shops/${s.shops?.id || ""}`} style={{ cursor: "pointer" }}>
                       <span className="service-shop">{s.shops?.shop_name}</span>
                       {s.shops?.is_verified === true && <span className="v-mini">✓</span>}
                     </div>
-                    <div className="service-name">{s.name}</div>
-                    {s.description && (
-                      <div className="service-desc">{s.description.slice(0, 80)}{s.description.length > 80 ? "..." : ""}</div>
-                    )}
+                    <div className="service-name" onClick={() => window.location.href = `/shops/${s.shops?.id || ""}`} style={{ cursor: "pointer" }}>{s.name}</div>
+                    {s.description && <div className="service-desc">{s.description.slice(0, 80)}{s.description.length > 80 ? "..." : ""}</div>}
                     <div className="service-footer">
                       <div className="service-price">
-                        {s.price_type === "free" ? "Free" :
-                         s.price_type === "negotiable" ? "Negotiable" :
-                         s.price ? `KSh ${s.price.toLocaleString()}${PRICE_LABEL[s.price_type] || ""}` : "Price on request"}
+                        {s.price_type === "free" ? "Free" : s.price_type === "negotiable" ? "Negotiable" : s.price ? `KSh ${s.price.toLocaleString()}${PRICE_LABEL[s.price_type] || ""}` : "Price on request"}
                       </div>
                       <div className="service-loc">📍 {s.county || s.shops?.county}</div>
                     </div>
                     <div className="service-actions">
-                      {s.shops?.phone && (
-                        <a href={`tel:${s.shops.phone}`} className="svc-btn" onClick={e => e.stopPropagation()}>📞 Call</a>
-                      )}
-                      {s.shops?.phone && (
-                        <a
-                          href={`https://wa.me/254${String(s.shops.phone).replace(/^0/, "")}?text=Hi, I saw your ${s.name} on Shoplace`}
-                          className="svc-btn wa"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={e => e.stopPropagation()}
-                        >
-                          💬 WhatsApp
-                        </a>
-                      )}
+                      {s.shops?.phone && <a href={`tel:${s.shops.phone}`} className="svc-btn" onClick={e => e.stopPropagation()}>📞 Call</a>}
+                      {s.shops?.phone && <a href={`https://wa.me/254${String(s.shops.phone).replace(/^0/, "")}?text=Hi, I saw your ${s.name} on Shoplace`} className="svc-btn wa" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>💬 WhatsApp</a>}
+                    </div>
+                    <div className="service-card-actions">
+                      <button className="card-action-btn rate-btn" onClick={() => { setRatingTarget(s); setRatingStars(0); setRatingComment(""); }}>⭐ Rate</button>
+                      <button className="card-action-btn report-btn" onClick={() => { setReportTarget(s); setReportReason(""); setReportDetails(""); }}>🚩 Report</button>
                     </div>
                   </div>
                 ))}
@@ -212,7 +290,7 @@ a{text-decoration:none;color:inherit;}
 .cat-tab.active{background:var(--rust);border-color:var(--rust);color:white;}
 .results-count{font-size:0.83rem;color:rgba(13,13,13,0.4);margin-bottom:1.2rem;}
 .services-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.3rem;}
-.service-card{background:white;border-radius:18px;padding:1.3rem;border:1px solid var(--border);transition:all .25s;cursor:pointer;display:flex;flex-direction:column;gap:0.55rem;}
+.service-card{background:white;border-radius:18px;padding:1.3rem;border:1px solid var(--border);transition:all .25s;display:flex;flex-direction:column;gap:0.55rem;}
 .service-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,0.09);}
 .service-top{display:flex;align-items:center;justify-content:space-between;}
 .service-icon{font-size:1.6rem;}
@@ -235,6 +313,12 @@ a{text-decoration:none;color:inherit;}
 .svc-btn:hover{border-color:var(--ink);color:var(--ink);}
 .svc-btn.wa{background:rgba(37,211,102,0.05);border-color:rgba(37,211,102,0.25);color:rgba(18,140,126,0.8);}
 .svc-btn.wa:hover{background:rgba(37,211,102,0.12);}
+.service-card-actions{display:flex;gap:0.4rem;margin-top:0.1rem;}
+.card-action-btn{flex:1;padding:0.35rem 0.5rem;border-radius:8px;font-size:0.72rem;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:transparent;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.rate-btn{color:rgba(13,13,13,0.5);}
+.rate-btn:hover{border-color:#f5a623;color:#c8830a;background:rgba(245,166,35,0.06);}
+.report-btn{color:rgba(13,13,13,0.4);}
+.report-btn:hover{border-color:var(--rust);color:var(--rust);background:rgba(200,75,49,0.05);}
 .empty-state{background:white;border-radius:18px;padding:5rem 2rem;text-align:center;border:1px solid var(--border);}
 .empty-ico{font-size:2.5rem;margin-bottom:1rem;}
 .empty-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;}
@@ -245,7 +329,31 @@ a{text-decoration:none;color:inherit;}
 .sk-line{height:11px;background:linear-gradient(90deg,#e8ede9 25%,#f0f4f1 50%,#e8ede9 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;}
 .w40{width:40%}.w60{width:60%}.w90{width:90%}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#0d0d0d;color:white;padding:0.65rem 1.5rem;border-radius:100px;font-size:0.85rem;font-weight:500;z-index:999;animation:fadeup 0.3s ease;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.modal{background:white;border-radius:20px;padding:1.8rem;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,0.18);}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;}
+.modal-title{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;}
+.modal-close{background:none;border:none;font-size:1rem;cursor:pointer;color:rgba(13,13,13,0.35);width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all .2s;}
+.modal-close:hover{background:rgba(13,13,13,0.06);}
+.modal-product-name{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;margin-bottom:0.2rem;}
+.modal-shop{font-size:0.75rem;color:rgba(13,13,13,0.42);margin-bottom:1.2rem;}
+.modal-stars-wrap{display:flex;align-items:center;gap:0.8rem;margin-bottom:1.2rem;}
+.modal-stars-label{font-size:0.82rem;font-weight:600;color:rgba(13,13,13,0.45);}
+.modal-label{font-size:0.78rem;font-weight:600;color:rgba(13,13,13,0.55);margin-bottom:0.4rem;}
+.modal-select{width:100%;padding:0.7rem 0.9rem;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:white;color:var(--ink);margin-bottom:1rem;outline:none;}
+.modal-select:focus{border-color:var(--rust);}
+.modal-textarea{width:100%;padding:0.75rem 0.9rem;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.85rem;resize:none;outline:none;margin-bottom:1.2rem;color:var(--ink);}
+.modal-textarea:focus{border-color:var(--rust);}
+.modal-actions{display:flex;gap:0.6rem;justify-content:flex-end;}
+.modal-btn-cancel{padding:0.55rem 1.1rem;border:1.5px solid var(--border);border-radius:10px;background:white;font-family:'DM Sans',sans-serif;font-size:0.83rem;cursor:pointer;color:rgba(13,13,13,0.5);transition:all .2s;}
+.modal-btn-cancel:hover{border-color:var(--ink);color:var(--ink);}
+.modal-btn-submit{padding:0.55rem 1.3rem;border:none;border-radius:10px;background:#f5a623;font-family:'DM Sans',sans-serif;font-size:0.83rem;font-weight:700;cursor:pointer;color:white;transition:all .2s;}
+.modal-btn-submit:hover{background:#d4881a;}
+.modal-btn-submit:disabled{opacity:0.45;cursor:not-allowed;}
+.modal-btn-report{padding:0.55rem 1.3rem;border:none;border-radius:10px;background:var(--rust);font-family:'DM Sans',sans-serif;font-size:0.83rem;font-weight:700;cursor:pointer;color:white;transition:all .2s;}
+.modal-btn-report:hover{background:#a83a22;}
+.modal-btn-report:disabled{opacity:0.45;cursor:not-allowed;}
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#0d0d0d;color:white;padding:0.65rem 1.5rem;border-radius:100px;font-size:0.85rem;font-weight:500;z-index:1100;animation:fadeup 0.3s ease;pointer-events:none;}
 @keyframes fadeup{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
 @media(max-width:1024px){.services-grid{grid-template-columns:repeat(3,1fr);}}
 @media(max-width:768px){
