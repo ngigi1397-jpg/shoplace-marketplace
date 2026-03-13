@@ -123,10 +123,6 @@ function LoginForm() {
                 Don&apos;t have an account yet?{" "}
                 <a href="/auth/signup">Create a free account →</a>
               </div>
-
-              <div className="admin-note">
-                Admin? <a href="/admin">Go to Admin Portal →</a>
-              </div>
             </div>
           </div>
 

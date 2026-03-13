@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient, User } from "@supabase/supabase-js";
+import ShopiChat from "@/components/ShopiChat";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -126,39 +127,18 @@ export default function HomePage() {
 
       {/* MOBILE BOTTOM NAV */}
       <nav className="mobile-bottom-nav">
-        <a href="/" className="mbn-item active">
-          <span>🏠</span>
-          <span>Home</span>
-        </a>
-        <a href="/products" className="mbn-item">
-          <span>📦</span>
-          <span>Browse</span>
-        </a>
-        <a href="/services" className="mbn-item">
-          <span>⚙️</span>
-          <span>Services</span>
-        </a>
-        <a href="/shops" className="mbn-item">
-          <span>🏬</span>
-          <span>Shops</span>
-        </a>
+        <a href="/" className="mbn-item active"><span>🏠</span><span>Home</span></a>
+        <a href="/products" className="mbn-item"><span>📦</span><span>Browse</span></a>
+        <a href="/services" className="mbn-item"><span>⚙️</span><span>Services</span></a>
+        <a href="/shops" className="mbn-item"><span>🏬</span><span>Shops</span></a>
         {user ? (
           role === "seller" ? (
-            <a href="/seller/dashboard" className="mbn-item mbn-highlight">
-              <span>🏪</span>
-              <span>My Shop</span>
-            </a>
+            <a href="/seller/dashboard" className="mbn-item mbn-highlight"><span>🏪</span><span>My Shop</span></a>
           ) : (
-            <a href="/buyer/saved" className="mbn-item mbn-highlight">
-              <span>❤️</span>
-              <span>My Saved</span>
-            </a>
+            <a href="/buyer/saved" className="mbn-item mbn-highlight"><span>❤️</span><span>My Saved</span></a>
           )
         ) : (
-          <a href="/auth/login" className="mbn-item mbn-highlight">
-            <span>👤</span>
-            <span>Sign In</span>
-          </a>
+          <a href="/auth/login" className="mbn-item mbn-highlight"><span>👤</span><span>Sign In</span></a>
         )}
       </nav>
 
@@ -188,6 +168,20 @@ export default function HomePage() {
             <div className="stat-item"><h3>47</h3><p>Counties</p></div>
             <div className="stat-item"><h3>Free</h3><p>To Join</p></div>
             <div className="stat-item"><h3>🔒</h3><p>Verified Sellers</p></div>
+          </div>
+
+          {/* SHOPI AI TEASER */}
+          <div className="shopi-teaser">
+            <div className="shopi-teaser-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div className="shopi-teaser-text">
+              <span className="shopi-teaser-label">Meet Shopi ✨</span>
+              <span className="shopi-teaser-sub">Your AI guide — ask anything about Shoplace</span>
+            </div>
+            <div className="shopi-teaser-arrow">→</div>
           </div>
         </div>
         <div className="hero-right">
@@ -298,8 +292,8 @@ export default function HomePage() {
           <div className="foot-col">
             <h4>Support</h4>
             <ul>
-              <li><a href="/help">Help Center:     shoplacekenya@gmail.com</a></li>
-              <li><a href="/contact">Contact Us:    shoplacekenya@gmail.com</a></li>
+              <li><a href="/help">Help Center: shoplacekenya@gmail.com</a></li>
+              <li><a href="/contact">Contact Us: shoplacekenya@gmail.com</a></li>
               <li><a href="/terms">Terms of Service</a></li>
               <li><a href="/privacy">Privacy Policy</a></li>
             </ul>
@@ -311,8 +305,10 @@ export default function HomePage() {
         </div>
       </footer>
 
-      {/* Bottom nav spacer on mobile */}
       <div className="mobile-bottom-spacer" />
+
+      {/* SHOPI AI ASSISTANT */}
+      <ShopiChat />
     </>
   );
 }
@@ -378,9 +374,19 @@ a{text-decoration:none;}
 .hero-search input{flex:1;padding:.9rem 1.1rem;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:.93rem;background:transparent;}
 .hero-search button{padding:.75rem 1.3rem;margin:.28rem;background:var(--rust);color:white;border:none;border-radius:9px;font-weight:500;cursor:pointer;font-size:.85rem;}
 .hero-btns{display:flex;gap:.7rem;margin-bottom:2.2rem;flex-wrap:wrap;}
-.hero-stats{display:flex;gap:2.2rem;}
+.hero-stats{display:flex;gap:2.2rem;margin-bottom:2rem;}
 .stat-item h3{font-family:'Syne',sans-serif;font-size:1.7rem;font-weight:800;letter-spacing:-.03em;}
 .stat-item p{font-size:.8rem;color:rgba(13,13,13,.45);margin-top:.1rem;}
+
+/* SHOPI TEASER */
+.shopi-teaser{display:inline-flex;align-items:center;gap:0.75rem;background:linear-gradient(135deg,rgba(200,75,49,0.08),rgba(232,114,26,0.06));border:1.5px solid rgba(200,75,49,0.2);border-radius:14px;padding:0.65rem 1rem;cursor:pointer;transition:all .2s;max-width:360px;}
+.shopi-teaser:hover{border-color:rgba(200,75,49,0.45);background:linear-gradient(135deg,rgba(200,75,49,0.12),rgba(232,114,26,0.09));transform:translateY(-1px);}
+.shopi-teaser-icon{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#c84b31,#e8721a);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.shopi-teaser-text{display:flex;flex-direction:column;gap:0.1rem;flex:1;}
+.shopi-teaser-label{font-size:0.78rem;font-weight:700;color:var(--rust);font-family:'Syne',sans-serif;}
+.shopi-teaser-sub{font-size:0.7rem;color:rgba(13,13,13,0.45);}
+.shopi-teaser-arrow{font-size:0.9rem;color:var(--rust);font-weight:700;}
+
 .hero-right{background:var(--ink);position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 .hero-right::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 70%,rgba(200,75,49,.3),transparent 60%),radial-gradient(circle at 80% 20%,rgba(232,160,32,.2),transparent 50%);}
 .hero-cards{position:relative;z-index:2;width:80%;max-width:370px;display:flex;flex-direction:column;gap:.9rem;}
@@ -458,6 +464,7 @@ footer{background:var(--ink);color:white;padding:4rem;}
   .hero-search{max-width:100%;}
   .hero-btns{flex-wrap:wrap;}
   .hero-stats{gap:1.2rem;}
+  .shopi-teaser{max-width:100%;}
   .how-grid{grid-template-columns:1fr;gap:1rem;}
   .cat-grid{grid-template-columns:repeat(3,1fr);}
   .sell-banner{flex-direction:column;text-align:center;padding:2rem 1.2rem;gap:1.2rem;margin:0 1.2rem 3rem;}
