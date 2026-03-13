@@ -9,7 +9,7 @@ const supabase = createClient(
 
 const COUNTIES = ["All","Baringo","Bomet","Bungoma","Busia","Elgeyo-Marakwet","Embu","Garissa","Homa Bay","Isiolo","Kajiado","Kakamega","Kericho","Kiambu","Kilifi","Kirinyaga","Kisii","Kisumu","Kitui","Kwale","Laikipia","Lamu","Machakos","Makueni","Mandera","Marsabit","Meru","Migori","Mombasa","Murang'a","Nairobi","Nakuru","Nandi","Narok","Nyamira","Nyandarua","Nyeri","Samburu","Siaya","Taita-Taveta","Tana River","Tharaka-Nithi","Trans Nzoia","Turkana","Uasin Gishu","Vihiga","Wajir","West Pokot"];
 
-function StarPicker({ value, onChange }) {
+function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [hover, setHover] = useState(0);
   return (
     <div style={{ display: "flex", gap: "0.3rem" }}>
@@ -23,24 +23,24 @@ function StarPicker({ value, onChange }) {
 }
 
 export default function ShopsPage() {
-  const [user, setUser] = useState(null);
-  const [shops, setShops] = useState([]);
+  const [user, setUser] = useState<any>(null);
+  const [shops, setShops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [county, setCounty] = useState("All");
-  const [savedIds, setSavedIds] = useState(new Set());
-  const [savingId, setSavingId] = useState(null);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [toast, setToast] = useState("");
-  const [ratingTarget, setRatingTarget] = useState(null);
+  const [ratingTarget, setRatingTarget] = useState<any>(null);
   const [ratingStars, setRatingStars] = useState(0);
   const [ratingComment, setRatingComment] = useState("");
   const [submittingRating, setSubmittingRating] = useState(false);
-  const [reportTarget, setReportTarget] = useState(null);
+  const [reportTarget, setReportTarget] = useState<any>(null);
   const [reportReason, setReportReason] = useState("");
   const [reportDetails, setReportDetails] = useState("");
   const [submittingReport, setSubmittingReport] = useState(false);
 
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -51,12 +51,12 @@ export default function ShopsPage() {
         supabase.from("saved_shops").select("shop_id").eq("user_id", session.user.id),
       ]);
       setShops(shopsData || []);
-      setSavedIds(new Set((savedData || []).map((s) => s.shop_id)));
+      setSavedIds(new Set((savedData || []).map((s: any) => s.shop_id)));
       setLoading(false);
     });
   }, []);
 
-  const toggleSave = async (e, shopId) => {
+  const toggleSave = async (e: React.MouseEvent, shopId: string) => {
     e.stopPropagation();
     if (!user || savingId) return;
     setSavingId(shopId);
@@ -75,7 +75,9 @@ export default function ShopsPage() {
   const submitRating = async () => {
     if (!ratingStars || !ratingTarget) return;
     setSubmittingRating(true);
-    await supabase.from("ratings").upsert({ user_id: user.id, shop_id: ratingTarget.id, stars: ratingStars, comment: ratingComment }, { onConflict: "user_id,shop_id" });
+    await supabase.from("ratings").upsert({
+      user_id: user.id, shop_id: ratingTarget.id, stars: ratingStars, comment: ratingComment,
+    }, { onConflict: "user_id,shop_id" });
     setRatingTarget(null); setRatingStars(0); setRatingComment("");
     showToast("Rating submitted! ⭐"); setSubmittingRating(false);
   };
@@ -83,7 +85,9 @@ export default function ShopsPage() {
   const submitReport = async () => {
     if (!reportReason || !reportTarget) return;
     setSubmittingReport(true);
-    await supabase.from("reports").insert({ reporter_id: user.id, shop_id: reportTarget.id, reason: reportReason, details: reportDetails });
+    await supabase.from("reports").insert({
+      reporter_id: user.id, shop_id: reportTarget.id, reason: reportReason, details: reportDetails,
+    });
     setReportTarget(null); setReportReason(""); setReportDetails("");
     showToast("Report submitted. We'll review it."); setSubmittingReport(false);
   };
@@ -95,73 +99,108 @@ export default function ShopsPage() {
   });
 
   const verifiedCount = shops.filter(s => s.is_verified === true).length;
+  const categoriesCount = shops.length ? new Set(shops.map(s => s.category).filter(Boolean)).size : 0;
 
   return (
     <>
       <style>{css}</style>
       {toast && <div className="toast">{toast}</div>}
 
+      {/* RATING MODAL */}
       {ratingTarget && (
         <div className="modal-overlay" onClick={() => setRatingTarget(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-head"><div className="modal-title">⭐ Rate this Shop</div><button className="modal-close" onClick={() => setRatingTarget(null)}>✕</button></div>
+          <div className="modal" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <div className="modal-head">
+              <div className="modal-title">⭐ Rate this Shop</div>
+              <button className="modal-close" onClick={() => setRatingTarget(null)}>✕</button>
+            </div>
             <div className="modal-product-name">{ratingTarget.shop_name}</div>
             <div className="modal-shop">📍 {ratingTarget.county} · {ratingTarget.category}</div>
-            <div className="modal-stars-wrap"><StarPicker value={ratingStars} onChange={setRatingStars} /><span className="modal-stars-label">{["","Poor","Fair","Good","Very Good","Excellent"][ratingStars] || "Tap to rate"}</span></div>
+            <div className="modal-stars-wrap">
+              <StarPicker value={ratingStars} onChange={setRatingStars} />
+              <span className="modal-stars-label">{["","Poor","Fair","Good","Very Good","Excellent"][ratingStars] || "Tap to rate"}</span>
+            </div>
             <textarea className="modal-textarea" placeholder="Write a review (optional)..." value={ratingComment} onChange={e => setRatingComment(e.target.value)} rows={3} />
-            <div className="modal-actions"><button className="modal-btn-cancel" onClick={() => setRatingTarget(null)}>Cancel</button><button className="modal-btn-submit" onClick={submitRating} disabled={!ratingStars || submittingRating}>{submittingRating ? "Submitting..." : "Submit Rating"}</button></div>
+            <div className="modal-actions">
+              <button className="modal-btn-cancel" onClick={() => setRatingTarget(null)}>Cancel</button>
+              <button className="modal-btn-submit" onClick={submitRating} disabled={!ratingStars || submittingRating}>{submittingRating ? "Submitting..." : "Submit Rating"}</button>
+            </div>
           </div>
         </div>
       )}
 
+      {/* REPORT MODAL */}
       {reportTarget && (
         <div className="modal-overlay" onClick={() => setReportTarget(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-head"><div className="modal-title">🚩 Report Shop</div><button className="modal-close" onClick={() => setReportTarget(null)}>✕</button></div>
+          <div className="modal" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <div className="modal-head">
+              <div className="modal-title">🚩 Report Shop</div>
+              <button className="modal-close" onClick={() => setReportTarget(null)}>✕</button>
+            </div>
             <div className="modal-product-name">{reportTarget.shop_name}</div>
             <div className="modal-shop">#{String(reportTarget.shop_number || "").padStart(5, "0")} · {reportTarget.county}</div>
             <div className="modal-label">Reason *</div>
             <select className="modal-select" value={reportReason} onChange={e => setReportReason(e.target.value)}>
               <option value="">Select a reason...</option>
-              <option>Scam / fraud</option><option>Fake products or services</option><option>Harassment or abuse</option><option>Inappropriate content</option><option>Misleading information</option><option>Other</option>
+              <option>Scam / fraud</option>
+              <option>Fake products or services</option>
+              <option>Harassment or abuse</option>
+              <option>Inappropriate content</option>
+              <option>Misleading information</option>
+              <option>Other</option>
             </select>
             <textarea className="modal-textarea" placeholder="Additional details (optional)..." value={reportDetails} onChange={e => setReportDetails(e.target.value)} rows={3} />
-            <div className="modal-actions"><button className="modal-btn-cancel" onClick={() => setReportTarget(null)}>Cancel</button><button className="modal-btn-report" onClick={submitReport} disabled={!reportReason || submittingReport}>{submittingReport ? "Submitting..." : "Submit Report"}</button></div>
+            <div className="modal-actions">
+              <button className="modal-btn-cancel" onClick={() => setReportTarget(null)}>Cancel</button>
+              <button className="modal-btn-report" onClick={submitReport} disabled={!reportReason || submittingReport}>{submittingReport ? "Submitting..." : "Submit Report"}</button>
+            </div>
           </div>
         </div>
       )}
 
       <div className="page-wrap">
+        {/* NAV */}
         <nav className="sp-nav">
           <a href="/" className="sp-logo">Sho<span>place</span></a>
-          <ul className="sp-nav-links"><li><a href="/products">Products</a></li><li><a href="/services">Services</a></li><li><a href="/counties">Counties</a></li></ul>
+          <ul className="sp-nav-links">
+            <li><a href="/products">Products</a></li>
+            <li><a href="/services">Services</a></li>
+            <li><a href="/counties">Counties</a></li>
+          </ul>
           <div className="sp-nav-actions">
             <a href="/buyer/saved" className="btn-ghost">🔖 Saved ({savedIds.size})</a>
             <button className="btn-rust-outline" onClick={async () => { await supabase.auth.signOut(); window.location.href = "/"; }}>Sign Out</button>
           </div>
         </nav>
 
+        {/* HERO — updated to match "fast image" */}
         <div className="hero">
           <div className="hero-bg" />
           <div className="hero-content">
-            <div className="hero-tag">🇰🇪 Kenya's Trusted Marketplace</div>
-            <h1>Find Shops You<br />Can Trust</h1>
-            <p>Browse verified sellers from all 47 counties — rated and reviewed by real buyers across Kenya</p>
+            <div className="hero-tag">Counties</div>
+            <h1>Kenya's Product Marketplace</h1>
+            <p>Discover Products From Local Sellers. Shop electronics, fashion, food and more from verified sellers across Kenya</p>
             <div className="hero-search">
               <span className="hero-search-icon">🔍</span>
-              <input type="text" placeholder="Search shops by name or description..." value={search} onChange={e => setSearch(e.target.value)} />
+              <input
+                type="text"
+                placeholder="Search products or shops..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
               {search && <button className="hero-clear" onClick={() => setSearch("")}>✕</button>}
             </div>
             <div className="hero-stats">
-              <div className="hero-stat"><strong>{shops.length}</strong> Approved Shops</div>
+              <div className="hero-stat"><strong>{shops.length}</strong> Shops Listed</div>
               <div className="hero-stat-divider" />
-              <div className="hero-stat"><strong>{verifiedCount}</strong> Verified Sellers</div>
+              <div className="hero-stat"><strong>{COUNTIES.length}</strong> Counties</div>
               <div className="hero-stat-divider" />
-              <div className="hero-stat"><strong>47</strong> Counties</div>
+              <div className="hero-stat"><strong>{categoriesCount}</strong> Categories</div>
             </div>
           </div>
         </div>
 
+        {/* COUNTIES BAR (unchanged) */}
         <div className="cats-bar">
           <div className="cats-inner">
             {COUNTIES.map(c => (
@@ -172,18 +211,34 @@ export default function ShopsPage() {
           </div>
         </div>
 
+        {/* CONTENT (unchanged) */}
         <div className="page-content">
           {loading ? (
-            <div className="shops-grid">{[...Array(8)].map((_, i) => (<div className="skeleton-card" key={i}><div className="sk-top" /><div className="sk-body"><div className="sk-line w60" /><div className="sk-line w90" /><div className="sk-line w40" /></div></div>))}</div>
+            <div className="shops-grid">
+              {[...Array(8)].map((_, i) => (
+                <div className="skeleton-card" key={i}>
+                  <div className="sk-top" />
+                  <div className="sk-body">
+                    <div className="sk-line w60" />
+                    <div className="sk-line w90" />
+                    <div className="sk-line w40" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : filtered.length === 0 ? (
-            <div className="empty-state"><div className="empty-ico">🏪</div><div className="empty-title">{search || county !== "All" ? "No shops match your search" : "No shops yet"}</div><div className="empty-sub">{search || county !== "All" ? "Try different keywords or a different county." : "No shops have been approved yet."}</div></div>
+            <div className="empty-state">
+              <div className="empty-ico">🏪</div>
+              <div className="empty-title">{search || county !== "All" ? "No shops match your search" : "No shops yet"}</div>
+              <div className="empty-sub">{search || county !== "All" ? "Try different keywords or a different county." : "No shops have been approved yet."}</div>
+            </div>
           ) : (
             <>
               <div className="results-bar">
                 <div className="results-count">
                   <strong>{filtered.length}</strong> shop{filtered.length !== 1 ? "s" : ""} found
                   {county !== "All" && <span className="results-filter"> in {county}</span>}
-                  {search && <span className="results-filter"> for "{search}"</span>}
+                  {search && <span className="results-filter"> for &quot;{search}&quot;</span>}
                 </div>
               </div>
               <div className="shops-grid">
@@ -191,20 +246,36 @@ export default function ShopsPage() {
                   <div key={s.id} className={"shop-card" + (s.is_verified === true ? " verified-card" : "")}>
                     {s.is_verified === true && (
                       <div className="verified-ribbon">
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none"><path d="M9 12.5L11 14.5L15.5 10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none">
+                          <path d="M9 12.5L11 14.5L15.5 10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                         Verified Seller
                       </div>
                     )}
-                    <button className={"save-btn" + (savedIds.has(s.id) ? " saved" : "")} onClick={e => toggleSave(e, s.id)} disabled={savingId === s.id}>{savedIds.has(s.id) ? "♥" : "♡"}</button>
+                    <button
+                      className={"save-btn" + (savedIds.has(s.id) ? " saved" : "")}
+                      onClick={(e: React.MouseEvent) => toggleSave(e, s.id)}
+                      disabled={savingId === s.id}
+                      title={savedIds.has(s.id) ? "Remove from saved" : "Save shop"}
+                    >
+                      {savedIds.has(s.id) ? "♥" : "♡"}
+                    </button>
                     <div className="shop-top" onClick={() => window.location.href = `/shops/${s.id}`}>
                       {s.is_verified === true ? (
                         <div className="shop-av verified-av">
                           <svg width="28" height="28" viewBox="0 0 220 220" fill="none">
-                            <defs><linearGradient id={"bg"+s.id} x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#FF8040"/><stop offset="50%" stopColor="#FF5566"/><stop offset="100%" stopColor="#FF2880"/></linearGradient></defs>
+                            <defs>
+                              <linearGradient id={"bg" + s.id} x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#FF8040"/>
+                                <stop offset="50%" stopColor="#FF5566"/>
+                                <stop offset="100%" stopColor="#FF2880"/>
+                              </linearGradient>
+                            </defs>
                             <rect width="220" height="220" rx="50" fill={`url(#bg${s.id})`}/>
                             <path d="M 76 100 C 76 72 82 56 86 50 C 90 44 96 42 102 42 C 108 42 114 44 118 50 C 122 56 128 72 128 100" fill="none" stroke="white" strokeWidth="10" strokeLinecap="round"/>
                             <path d="M 55 100 C 53 90 58 80 70 78 L 134 78 C 146 80 151 90 149 100 L 158 162 C 160 174 148 180 102 180 C 56 180 44 174 46 162 Z" fill="white" opacity="0.95"/>
-                            <circle cx="102" cy="118" r="18" fill={`url(#bg${s.id})`}/><circle cx="102" cy="118" r="8" fill="white"/>
+                            <circle cx="102" cy="118" r="18" fill={`url(#bg${s.id})`}/>
+                            <circle cx="102" cy="118" r="8" fill="white"/>
                             <path d="M 90 130 Q 102 154 114 130 Q 108 142 102 152 Q 96 142 90 130 Z" fill={`url(#bg${s.id})`}/>
                           </svg>
                         </div>
@@ -214,14 +285,23 @@ export default function ShopsPage() {
                       <div className="shop-num">#{String(s.shop_number || "").padStart(5, "0")}</div>
                     </div>
                     <div className="shop-name" onClick={() => window.location.href = `/shops/${s.id}`}>{s.shop_name}</div>
-                    {s.description && <div className="shop-desc" onClick={() => window.location.href = `/shops/${s.id}`}>{s.description.slice(0, 70)}{s.description.length > 70 ? "..." : ""}</div>}
-                    <div className="shop-meta-row"><span className="shop-county">📍 {s.county}</span><span className="shop-cat">{s.category}</span></div>
+                    {s.description && (
+                      <div className="shop-desc" onClick={() => window.location.href = `/shops/${s.id}`}>
+                        {s.description.slice(0, 70)}{s.description.length > 70 ? "..." : ""}
+                      </div>
+                    )}
+                    <div className="shop-meta-row">
+                      <span className="shop-county">📍 {s.county}</span>
+                      <span className="shop-cat">{s.category}</span>
+                    </div>
                     {s.phone && <div className="shop-phone">📞 {s.phone}</div>}
                     <div className="shop-card-actions">
-                      <button className="card-action-btn rate-btn" onClick={e => { e.stopPropagation(); setRatingTarget(s); setRatingStars(0); setRatingComment(""); }}>⭐ Rate</button>
-                      <button className="card-action-btn report-btn" onClick={e => { e.stopPropagation(); setReportTarget(s); setReportReason(""); setReportDetails(""); }}>🚩 Report</button>
+                      <button className="card-action-btn rate-btn" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setRatingTarget(s); setRatingStars(0); setRatingComment(""); }}>⭐ Rate</button>
+                      <button className="card-action-btn report-btn" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setReportTarget(s); setReportReason(""); setReportDetails(""); }}>🚩 Report</button>
                     </div>
-                    <div className="shop-footer" onClick={() => window.location.href = `/shops/${s.id}`}><span className="shop-arrow">View Shop →</span></div>
+                    <div className="shop-footer" onClick={() => window.location.href = `/shops/${s.id}`}>
+                      <span className="shop-arrow">View Shop →</span>
+                    </div>
                   </div>
                 ))}
               </div>
