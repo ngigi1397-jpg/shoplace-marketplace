@@ -120,7 +120,7 @@ export default function ShopiChat() {
             <div ref={bottomRef} />
           </div>
 
-          {/* SUGGESTIONS — only show if still on first message */}
+          {/* SUGGESTIONS — only show on first message */}
           {messages.length === 1 && !loading && (
             <div className="shopi-suggestions">
               {SUGGESTIONS.map(s => (
@@ -151,7 +151,7 @@ export default function ShopiChat() {
             </button>
           </div>
 
-          <div className="shopi-footer">Powered by Claude AI · Shoplace Kenya</div>
+          <div className="shopi-footer">Powered by DeepSeek AI · Shoplace Kenya</div>
         </div>
       )}
 
@@ -173,24 +173,90 @@ export default function ShopiChat() {
 }
 
 const css = `
-.shopi-fab{position:fixed;bottom:2rem;right:2rem;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#c84b31,#e8721a,#f5a623);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(200,75,49,0.4);z-index:999;transition:all .25s;position:fixed;}
+/* FAB — desktop: bottom-right, mobile: above bottom nav */
+.shopi-fab{
+  position:fixed;
+  bottom:2rem;
+  right:2rem;
+  width:56px;height:56px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#c84b31,#e8721a,#f5a623);
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 24px rgba(200,75,49,0.4);
+  z-index:9999;
+  transition:all .25s;
+}
 .shopi-fab:hover{transform:scale(1.08);box-shadow:0 12px 32px rgba(200,75,49,0.5);}
-.shopi-badge{position:absolute;top:-4px;right:-4px;width:20px;height:20px;background:#ff3b30;border-radius:50%;color:white;font-size:0.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid white;}
-.shopi-panel{position:fixed;bottom:6rem;right:2rem;width:360px;max-height:520px;background:white;border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,0.18);display:flex;flex-direction:column;z-index:998;overflow:hidden;animation:shopiSlideUp .25s ease;}
+.shopi-badge{
+  position:absolute;top:-4px;right:-4px;
+  width:20px;height:20px;
+  background:#ff3b30;border-radius:50%;
+  color:white;font-size:0.65rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid white;
+}
+
+/* PANEL — desktop */
+.shopi-panel{
+  position:fixed;
+  bottom:6.5rem;
+  right:2rem;
+  width:370px;
+  height:520px;
+  background:white;
+  border-radius:20px;
+  box-shadow:0 24px 64px rgba(0,0,0,0.18);
+  display:flex;flex-direction:column;
+  z-index:9998;
+  overflow:hidden;
+  animation:shopiSlideUp .25s ease;
+}
 @keyframes shopiSlideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-.shopi-header{background:linear-gradient(135deg,#c84b31,#e8721a);padding:1rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+
+.shopi-header{
+  background:linear-gradient(135deg,#c84b31,#e8721a);
+  padding:1rem 1.2rem;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
 .shopi-header-left{display:flex;align-items:center;gap:0.75rem;}
-.shopi-avatar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,0.3);}
+.shopi-avatar{
+  width:38px;height:38px;border-radius:50%;
+  background:rgba(255,255,255,0.2);
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid rgba(255,255,255,0.3);
+}
 .shopi-name{font-family:'Syne',sans-serif;font-weight:800;font-size:0.95rem;color:white;}
 .shopi-status{display:flex;align-items:center;gap:0.35rem;font-size:0.68rem;color:rgba(255,255,255,0.75);}
 .shopi-dot{width:6px;height:6px;background:#4ade80;border-radius:50%;flex-shrink:0;}
-.shopi-close{background:rgba(255,255,255,0.15);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;transition:background .2s;}
+.shopi-close{
+  background:rgba(255,255,255,0.15);border:none;color:white;
+  width:28px;height:28px;border-radius:50%;cursor:pointer;
+  font-size:0.85rem;display:flex;align-items:center;justify-content:center;
+  transition:background .2s;
+}
 .shopi-close:hover{background:rgba(255,255,255,0.28);}
-.shopi-messages{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:0.75rem;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,0.1) transparent;}
+
+.shopi-messages{
+  flex:1;overflow-y:auto;padding:1rem;
+  display:flex;flex-direction:column;gap:0.75rem;
+  scrollbar-width:thin;scrollbar-color:rgba(0,0,0,0.1) transparent;
+}
 .shopi-msg{display:flex;align-items:flex-end;gap:0.5rem;}
 .shopi-msg-user{flex-direction:row-reverse;}
-.shopi-msg-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#c84b31,#e8721a);color:white;font-size:0.65rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Syne',sans-serif;}
-.shopi-bubble{padding:0.6rem 0.85rem;border-radius:14px;font-size:0.82rem;line-height:1.55;max-width:260px;word-break:break-word;}
+.shopi-msg-av{
+  width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(135deg,#c84b31,#e8721a);
+  color:white;font-size:0.65rem;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-family:'Syne',sans-serif;
+}
+.shopi-bubble{
+  padding:0.6rem 0.85rem;border-radius:14px;
+  font-size:0.82rem;line-height:1.55;
+  max-width:270px;word-break:break-word;
+}
 .shopi-msg-bot .shopi-bubble{background:#f5f0e8;color:#0d0d0d;border-bottom-left-radius:4px;}
 .shopi-msg-user .shopi-bubble{background:linear-gradient(135deg,#c84b31,#e8721a);color:white;border-bottom-right-radius:4px;}
 .shopi-typing{display:flex;align-items:center;gap:4px;padding:0.75rem 1rem;}
@@ -198,20 +264,70 @@ const css = `
 .shopi-typing span:nth-child(2){animation-delay:.2s;}
 .shopi-typing span:nth-child(3){animation-delay:.4s;}
 @keyframes shopiDot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
 .shopi-suggestions{padding:0 1rem 0.75rem;display:flex;flex-wrap:wrap;gap:0.4rem;}
-.shopi-suggestion{padding:0.3rem 0.7rem;border:1.5px solid rgba(200,75,49,0.25);border-radius:100px;font-size:0.72rem;font-weight:500;color:#c84b31;background:rgba(200,75,49,0.04);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.shopi-suggestion{
+  padding:0.3rem 0.7rem;
+  border:1.5px solid rgba(200,75,49,0.25);border-radius:100px;
+  font-size:0.72rem;font-weight:500;color:#c84b31;
+  background:rgba(200,75,49,0.04);cursor:pointer;transition:all .2s;
+  font-family:'DM Sans',sans-serif;
+}
 .shopi-suggestion:hover{background:rgba(200,75,49,0.08);border-color:rgba(200,75,49,0.5);}
-.shopi-input-row{display:flex;gap:0.5rem;padding:0.75rem 1rem;border-top:1px solid rgba(13,13,13,0.08);flex-shrink:0;}
-.shopi-input{flex:1;border:1.5px solid rgba(13,13,13,0.1);border-radius:10px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.82rem;outline:none;color:#0d0d0d;background:white;}
+
+.shopi-input-row{
+  display:flex;gap:0.5rem;
+  padding:0.75rem 1rem;
+  border-top:1px solid rgba(13,13,13,0.08);
+  flex-shrink:0;
+}
+.shopi-input{
+  flex:1;border:1.5px solid rgba(13,13,13,0.1);border-radius:10px;
+  padding:0.55rem 0.8rem;
+  font-family:'DM Sans',sans-serif;font-size:0.82rem;
+  outline:none;color:#0d0d0d;background:white;
+}
 .shopi-input:focus{border-color:#e8721a;}
 .shopi-input::placeholder{color:rgba(13,13,13,0.35);}
 .shopi-input:disabled{opacity:0.6;}
-.shopi-send{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#c84b31,#e8721a);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.shopi-send{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,#c84b31,#e8721a);
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;flex-shrink:0;
+}
 .shopi-send:hover{opacity:0.85;}
 .shopi-send:disabled{opacity:0.4;cursor:not-allowed;}
-.shopi-footer{text-align:center;font-size:0.62rem;color:rgba(13,13,13,0.3);padding:0.5rem;border-top:1px solid rgba(13,13,13,0.05);flex-shrink:0;}
-@media(max-width:480px){
-  .shopi-panel{right:0.75rem;left:0.75rem;width:auto;bottom:5.5rem;}
-  .shopi-fab{right:1rem;bottom:1.5rem;}
+.shopi-footer{
+  text-align:center;font-size:0.62rem;color:rgba(13,13,13,0.3);
+  padding:0.5rem;border-top:1px solid rgba(13,13,13,0.05);flex-shrink:0;
+}
+
+/* MOBILE — above bottom nav (70px), panel fills most of screen */
+@media(max-width:768px){
+  .shopi-fab{
+    bottom:80px;
+    right:1rem;
+    width:52px;height:52px;
+    z-index:9999;
+  }
+  .shopi-panel{
+    position:fixed;
+    bottom:144px;
+    right:0.75rem;
+    left:0.75rem;
+    width:auto;
+    height:65vh;
+    max-height:500px;
+    border-radius:18px;
+    z-index:9998;
+  }
+}
+@media(max-width:380px){
+  .shopi-panel{
+    bottom:140px;
+    height:60vh;
+  }
 }
 `;
