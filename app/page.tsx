@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient, User } from "@supabase/supabase-js";
-import ShopiChat from "@/components/ShopiChat";
+// import ShopiChat from "@/components/ShopiChat";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -308,7 +308,7 @@ export default function HomePage() {
       <div className="mobile-bottom-spacer" />
 
       {/* SHOPI AI ASSISTANT */}
-      <ShopiChat />
+      {/* <ShopiChat /> */}
     </>
   );
 }
